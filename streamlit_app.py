@@ -7,7 +7,7 @@ from pathlib import Path
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Contractor Defense Portal",
+    page_title="Wayne Brothers : Johnson & Johnson (J&J) Biologics Manufacturing Facility in Wilson, NC",
     page_icon="🏗️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -15,7 +15,7 @@ st.set_page_config(
 
 # --- STYLING & DESIGN ---
 def apply_professional_styling():
-    """Apply industrial-themed styling with enhanced visual hierarchy"""
+    """Apply industrial-themed styling with white text"""
     bg_url = "https://raw.githubusercontent.com/mickeybhenson-commits/J-J-LMDS-WILSON-NC/main/image_12e160.png"
     
     st.markdown(f"""
@@ -43,7 +43,7 @@ def apply_professional_styling():
             background: linear-gradient(145deg, rgba(30,30,35,0.95), rgba(20,20,25,0.95));
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #FFD700;
+            border-left: 4px solid #FFFFFF;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             transition: transform 0.2s;
         }}
@@ -83,11 +83,12 @@ def apply_professional_styling():
             border-radius: 6px;
             padding: 10px 20px;
             font-weight: 600;
+            color: #FFFFFF;
         }}
         
         .stTabs [aria-selected="true"] {{
-            background-color: rgba(255,215,0,0.3);
-            border-bottom: 3px solid #FFD700;
+            background-color: rgba(255,255,255,0.2);
+            border-bottom: 3px solid #FFFFFF;
         }}
         
         /* Alert boxes */
@@ -111,16 +112,29 @@ def apply_professional_styling():
             color: #FFeecc;
         }}
         
-        /* Headers */
+        /* Headers - WHITE instead of gold */
         h1, h2, h3 {{
-            color: #FFD700 !important;
+            color: #FFFFFF !important;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }}
+        
+        /* All text white */
+        p, span, div, label {{
+            color: #FFFFFF !important;
         }}
         
         /* Info boxes */
         .stInfo {{
             background-color: rgba(0,100,200,0.15);
             border-left: 4px solid #0066CC;
+        }}
+        
+        /* Radar container */
+        .radar-container {{
+            background-color: rgba(20,20,25,0.95);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -255,7 +269,7 @@ def generate_alerts(site_data, api, work_status):
     if site_data['crane_safety']['max_gust'] > 25:
         alerts.append({
             'level': 'danger',
-            'title': '⚠️ WIND ALERT',
+            'title': 'WIND ALERT',
             'message': f"Peak gusts of {site_data['crane_safety']['max_gust']} MPH exceed safe lifting threshold (25 MPH). Suspend crane operations and secure all materials."
         })
     
@@ -263,7 +277,7 @@ def generate_alerts(site_data, api, work_status):
     if site_data['lightning']['recent_strikes_50mi'] > 0:
         alerts.append({
             'level': 'warning',
-            'title': '⚡ LIGHTNING DETECTED',
+            'title': 'LIGHTNING DETECTED',
             'message': f"{site_data['lightning']['recent_strikes_50mi']} strikes within 50 miles in last hour. Monitor conditions and prepare 30-minute evacuation protocol."
         })
     
@@ -271,13 +285,13 @@ def generate_alerts(site_data, api, work_status):
     if work_status == "RESTRICTED":
         alerts.append({
             'level': 'danger',
-            'title': '🚫 SOIL WORKABILITY RESTRICTED',
+            'title': 'SOIL WORKABILITY RESTRICTED',
             'message': f"API of {round(api, 2)} exceeds threshold. All grading operations must cease until soil conditions improve."
         })
     elif work_status == "CRITICAL":
         alerts.append({
             'level': 'warning',
-            'title': '⚠️ SOIL CONDITIONS CRITICAL',
+            'title': 'SOIL CONDITIONS CRITICAL',
             'message': f"API of {round(api, 2)} indicates critical saturation. Minimize earthwork and increase monitoring."
         })
     
@@ -285,7 +299,7 @@ def generate_alerts(site_data, api, work_status):
     if site_data['swppp']['sb3_capacity_pct'] > 80:
         alerts.append({
             'level': 'warning',
-            'title': '💧 BASIN CAPACITY WARNING',
+            'title': 'BASIN CAPACITY WARNING',
             'message': f"Sediment Basin SB3 at {site_data['swppp']['sb3_capacity_pct']}% capacity. Coordinate pump-out operations before next rain event."
         })
     
@@ -294,7 +308,7 @@ def generate_alerts(site_data, api, work_status):
 def display_alerts(alerts):
     """Display alert messages with appropriate styling"""
     if not alerts:
-        st.success("✅ No active alerts - All systems nominal")
+        st.success("No active alerts - All systems nominal")
         return
     
     for alert in alerts:
@@ -314,22 +328,21 @@ def main():
     
     # Sidebar controls
     with st.sidebar:
-        st.image("https://via.placeholder.com/200x80/1a1a1a/FFD700?text=DEFENSE+PORTAL", use_container_width=True)
-        st.markdown("### ⚙️ SYSTEM CONTROLS")
+        st.markdown("### SYSTEM CONTROLS")
         
         auto_refresh = st.checkbox("Auto-Refresh (30s)", value=False)
         if auto_refresh:
             st.write(f"Last update: {st.session_state.last_refresh.strftime('%H:%M:%S')}")
-            if st.button("🔄 Refresh Now"):
+            if st.button("Refresh Now"):
                 st.rerun()
         
         refresh_interval = st.slider("Refresh Interval (seconds)", 10, 300, 30)
         
         st.markdown("---")
-        st.markdown("### 📊 SYSTEM INFO")
+        st.markdown("### SYSTEM INFO")
         st.write(f"**Server Time:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
-        if st.button("📥 Export Report"):
+        if st.button("Export Report"):
             st.info("Report export feature coming soon")
     
     # Load data
@@ -337,7 +350,7 @@ def main():
     result = data_manager.load_all()
     
     if result['status'] == 'error':
-        st.error(f"🚨 SYSTEM STATUS: {result['message']}")
+        st.error(f"SYSTEM STATUS: {result['message']}")
         st.info("Waiting for data synchronization. Please check data directory and file permissions.")
         st.stop()
     
@@ -355,7 +368,7 @@ def main():
     col_title, col_status = st.columns([3, 1])
     
     with col_title:
-        st.title(f"🏗️ {site_data['project_name']}")
+        st.title(f"{site_data['project_name']}")
         st.caption(f"Last Updated: {site_data['last_updated']} | API: {round(api, 3)}")
     
     with col_status:
@@ -367,41 +380,50 @@ def main():
         """, unsafe_allow_html=True)
     
     # --- ALERTS SECTION ---
-    with st.expander("🚨 ACTIVE ALERTS & NOTIFICATIONS", expanded=len(alerts) > 0):
+    with st.expander("ACTIVE ALERTS & NOTIFICATIONS", expanded=len(alerts) > 0):
         display_alerts(alerts)
     
     # --- MAIN TABS ---
     tab_weather, tab_grading, tab_swppp, tab_crane, tab_analytics = st.tabs([
-        "🌤️ Weather", 
-        "🚜 Grading", 
-        "💧 SWPPP", 
-        "🏗️ Crane", 
-        "📊 Analytics"
+        "Weather", 
+        "Grading", 
+        "SWPPP", 
+        "Crane", 
+        "Analytics"
     ])
     
     # === WEATHER TAB ===
     with tab_weather:
         st.header("Meteorological Intelligence")
         
-        # Live radar section
-        st.subheader("📡 Live Radar Surveillance")
+        # Live radar section with Windy.com embeds (animated and reliable)
+        st.subheader("Live Radar Surveillance")
         
-        radar_col1, radar_col2, radar_col3 = st.columns(3)
+        radar_col1, radar_col2 = st.columns(2)
         
         with radar_col1:
-            st.markdown("**Local (Wilson, NC)**")
-            # Wilson, NC coordinates: 35.726, -77.916
-            local_radar_url = "https://radar.weather.gov/?settings=v1_eyJhZ2VuZCI6InN0cmVhbWxpdCIsImJhc2UiOiJzdGFuZGFyZCIsImNvdW50eSI6IjEiLCJjdW11bGF0aXZlIjoiMCIsImxhdCI6MzUuNzI2LCJsb24iOi03Ny45MTYsInByb2R1Y3QiOiJOUVciLCJzdGF0ZSI6IjEiLCJ0aW1lX3JhdGUiOiIxIiwidmlldyI6ImxvY2FsIiwiem9vbSI6IjgifQ%3D%3D"
-            st.components.v1.iframe(local_radar_url, height=350, scrolling=False)
+            st.markdown("**Local Radar - Wilson, NC**")
+            # Windy.com embed for Wilson, NC (35.726, -77.916) with radar layer
+            windy_local = """
+            <div class="radar-container">
+                <iframe width="100%" height="450" 
+                src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&detailLat=35.726&detailLon=-77.916&width=650&height=450&zoom=8&level=surface&overlay=radar&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=mph&metricTemp=%C2%B0F&radarRange=-1" 
+                frameborder="0"></iframe>
+            </div>
+            """
+            st.components.v1.html(windy_local, height=480)
         
         with radar_col2:
-            st.markdown("**Regional (Mid-Atlantic)**")
-            regional_radar_url = "https://radar.weather.gov/?settings=v1_eyJhZ2VuZCI6InN0cmVhbWxpdCIsImJhc2UiOiJzdGFuZGFyZCIsImNvdW50eSI6IjEiLCJjdW11bGF0aXZlIjoiMCIsImxhdCI6MzcuNTQwLCJsb24iOi03Ny40MzYsInByb2R1Y3QiOiJOUVciLCJzdGF0ZSI6IjEiLCJ0aW1lX3JhdGUiOiIxIiwidmlldyI6InJlZ2lvbmFsIiwiem9vbSI6IjUifQ%3D%3D"
-            st.components.v1.iframe(regional_radar_url, height=350, scrolling=False)
-        
-        with radar_col3:
-            st.markdown("**National (CONUS)**")
-            st.components.v1.iframe("https://radar.weather.gov/", height=350, scrolling=False)
+            st.markdown("**Regional View - Mid-Atlantic**")
+            # Wider view of Mid-Atlantic region
+            windy_regional = """
+            <div class="radar-container">
+                <iframe width="100%" height="450" 
+                src="https://embed.windy.com/embed2.html?lat=36.5&lon=-79.0&detailLat=36.5&detailLon=-79.0&width=650&height=450&zoom=6&level=surface&overlay=radar&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=mph&metricTemp=%C2%B0F&radarRange=-1" 
+                frameborder="0"></iframe>
+            </div>
+            """
+            st.components.v1.html(windy_regional, height=480)
         
         st.markdown("---")
         
@@ -409,7 +431,7 @@ def main():
         weather_col1, weather_col2, weather_col3 = st.columns(3)
         
         with weather_col1:
-            st.subheader("☔ Precipitation")
+            st.subheader("Precipitation")
             st.metric(
                 "24-Hour Actual", 
                 f"{site_data['precipitation']['actual_24h']} IN",
@@ -417,7 +439,7 @@ def main():
             )
             
         with weather_col2:
-            st.subheader("⚡ Lightning")
+            st.subheader("Lightning")
             st.metric(
                 "Recent Strikes (50mi)", 
                 site_data['lightning']['recent_strikes_50mi'],
@@ -425,12 +447,12 @@ def main():
             )
             
         with weather_col3:
-            st.subheader("🌡️ Conditions")
+            st.subheader("Conditions")
             st.metric("Soil Saturation (API)", f"{round(api, 2)}", delta=work_status)
         
         # Historical precipitation chart
         if not history.empty and 'date' in history.columns:
-            st.subheader("📈 7-Day Precipitation History")
+            st.subheader("7-Day Precipitation History")
             chart_data = history.tail(7).set_index('date')['precip_actual']
             st.line_chart(chart_data, height=200)
     
@@ -459,10 +481,10 @@ def main():
             
             # API thresholds
             st.markdown("**API Thresholds:**")
-            st.write(f"🟢 Optimal: < {WorkabilityAnalyzer.THRESHOLDS['optimal']}")
-            st.write(f"🟡 Saturated: < {WorkabilityAnalyzer.THRESHOLDS['saturated']}")
-            st.write(f"🟠 Critical: < {WorkabilityAnalyzer.THRESHOLDS['critical']}")
-            st.write(f"🔴 Restricted: ≥ {WorkabilityAnalyzer.THRESHOLDS['critical']}")
+            st.write(f"Optimal: < {WorkabilityAnalyzer.THRESHOLDS['optimal']}")
+            st.write(f"Saturated: < {WorkabilityAnalyzer.THRESHOLDS['saturated']}")
+            st.write(f"Critical: < {WorkabilityAnalyzer.THRESHOLDS['critical']}")
+            st.write(f"Restricted: >= {WorkabilityAnalyzer.THRESHOLDS['critical']}")
         
         with grade_col2:
             st.subheader("Operational Recommendations")
@@ -475,14 +497,13 @@ def main():
             st.write(f"**API Decay Factor:** 0.85 (daily)")
             st.write(f"**Calculation Period:** 5 days")
             
-            with st.expander("ℹ️ About API Calculation"):
+            with st.expander("About API Calculation"):
                 st.markdown("""
                 The **Antecedent Precipitation Index (API)** is a weighted measure of recent rainfall 
                 that indicates soil moisture levels. It's calculated using:
-                
-                ```
+```
                 API = Σ (Rainfall_i × 0.85^i)
-                ```
+```
                 
                 Where `i` is the number of days ago. More recent rainfall has greater impact 
                 on current soil conditions.
@@ -495,7 +516,7 @@ def main():
         swppp_col1, swppp_col2 = st.columns(2)
         
         with swppp_col1:
-            st.subheader("🏊 Sediment Basin SB3")
+            st.subheader("Sediment Basin SB3")
             
             capacity_pct = site_data['swppp']['sb3_capacity_pct']
             
@@ -515,20 +536,20 @@ def main():
             st.caption("**Location:** NW property low point")
         
         with swppp_col2:
-            st.subheader("🚧 Perimeter Controls")
+            st.subheader("Perimeter Controls")
             
             st.metric("Disturbed Acreage", f"{site_data['swppp']['disturbed_acres']} AC")
             st.write(f"**Silt Fence Status:** {site_data['swppp']['silt_fence_integrity']}")
             
             st.markdown("---")
             st.markdown("**Control Measures:**")
-            st.write("✅ Silt fence perimeter")
-            st.write("✅ Inlet protection devices")
-            st.write("✅ Sediment basin SB3")
-            st.write("✅ Stabilized construction entrance")
+            st.write("Silt fence perimeter")
+            st.write("Inlet protection devices")
+            st.write("Sediment basin SB3")
+            st.write("Stabilized construction entrance")
         
         # Compliance checklist
-        with st.expander("📋 Daily Inspection Checklist"):
+        with st.expander("Daily Inspection Checklist"):
             st.checkbox("Basin freeboard adequate (>1.0 ft)", value=True)
             st.checkbox("Silt fence integrity maintained", value=True)
             st.checkbox("Inlet protection in place", value=True)
@@ -542,54 +563,54 @@ def main():
         crane_col1, crane_col2, crane_col3 = st.columns(3)
         
         with crane_col1:
-            st.subheader("💨 Wind Conditions")
+            st.subheader("Wind Conditions")
             st.metric("Current Wind Speed", f"{site_data['crane_safety']['wind_speed']} MPH")
             st.metric("Maximum Gusts", f"{site_data['crane_safety']['max_gust']} MPH")
             
             # Wind safety threshold
             max_gust = site_data['crane_safety']['max_gust']
             if max_gust < 20:
-                st.success("✅ Safe for all operations")
+                st.success("Safe for all operations")
             elif max_gust < 25:
-                st.warning("⚠️ Monitor conditions")
+                st.warning("Monitor conditions")
             else:
-                st.error("🚫 Suspend operations")
+                st.error("Suspend operations")
         
         with crane_col2:
-            st.subheader("⚡ Environmental")
+            st.subheader("Environmental")
             st.write(f"**Lightning Threat:** {site_data['lightning']['forecast']}")
             st.write(f"**Recent Strikes (50mi):** {site_data['lightning']['recent_strikes_50mi']}")
             st.write(f"**Overall Status:** {site_data['crane_safety']['status']}")
         
         with crane_col3:
-            st.subheader("🌍 Ground Conditions")
+            st.subheader("Ground Conditions")
             st.write(f"**Soil Workability:** {work_status}")
             st.write(f"**API Index:** {round(api, 2)}")
             
             if work_status in ["CRITICAL", "RESTRICTED"]:
-                st.warning("⚠️ Verify crane pad stability")
+                st.warning("Verify crane pad stability")
         
         # Safety protocol
         st.markdown("---")
-        st.subheader("📋 Lift Operations Protocol")
+        st.subheader("Lift Operations Protocol")
         
         protocol_col1, protocol_col2 = st.columns(2)
         
         with protocol_col1:
             st.markdown("**Pre-Lift Checklist:**")
-            st.write("☑️ Wind speed < 25 MPH")
-            st.write("☑️ No active lightning within 50 miles")
-            st.write("☑️ Ground conditions stable")
-            st.write("☑️ Load charts verified")
-            st.write("☑️ Competent person on-site")
+            st.write("Wind speed < 25 MPH")
+            st.write("No active lightning within 50 miles")
+            st.write("Ground conditions stable")
+            st.write("Load charts verified")
+            st.write("Competent person on-site")
         
         with protocol_col2:
             st.markdown("**Stop Work Conditions:**")
-            st.write("🚫 Wind gusts > 25 MPH")
-            st.write("🚫 Lightning within 10 miles")
-            st.write("🚫 Visibility < 100 feet")
-            st.write("🚫 Ground stability concerns")
-            st.write("🚫 Equipment malfunction")
+            st.write("Wind gusts > 25 MPH")
+            st.write("Lightning within 10 miles")
+            st.write("Visibility < 100 feet")
+            st.write("Ground stability concerns")
+            st.write("Equipment malfunction")
     
     # === ANALYTICS TAB ===
     with tab_analytics:
@@ -602,7 +623,7 @@ def main():
             analytics_col1, analytics_col2 = st.columns(2)
             
             with analytics_col1:
-                st.subheader("📊 Precipitation Trends")
+                st.subheader("Precipitation Trends")
                 
                 days_to_show = st.slider("Days to Display", 7, 30, 14)
                 recent_history = history.tail(days_to_show)
@@ -617,7 +638,7 @@ def main():
                     st.metric("Daily Average", f"{round(avg_precip, 3)} IN")
             
             with analytics_col2:
-                st.subheader("📈 Workability History")
+                st.subheader("Workability History")
                 
                 # Calculate historical API values
                 api_history = []
@@ -646,11 +667,11 @@ def main():
     footer_col1, footer_col2, footer_col3 = st.columns(3)
     
     with footer_col1:
-        st.caption("🏗️ Contractor Defense Portal v2.0")
+        st.caption("Contractor Defense Portal v2.0")
     with footer_col2:
-        st.caption(f"⚡ Powered by Real-Time Environmental Monitoring")
+        st.caption("Powered by Real-Time Environmental Monitoring")
     with footer_col3:
-        st.caption(f"🕐 {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        st.caption(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # Auto-refresh logic
     if auto_refresh:
