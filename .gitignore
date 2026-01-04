@@ -1,0 +1,20 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+venv/
+ENV/
+.env
+
+# Streamlit
+.streamlit/config.toml
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Data logs (Optional: ignore if you want to keep logs private)
+# data/history.csv
