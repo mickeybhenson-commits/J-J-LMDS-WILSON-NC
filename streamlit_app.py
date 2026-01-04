@@ -8,7 +8,7 @@ import datetime
 st.set_page_config(page_title="Contractor Defense Portal", layout="wide")
 
 def add_professional_design():
-    # Utilizing industrial diamond-plate background
+    # Utilizing the industrial diamond-plate background
     bg_url = "https://raw.githubusercontent.com/mickeybhenson-commits/J-J-LMDS-WILSON-NC/main/image_12e160.png"
     st.markdown(
          f"""
@@ -57,6 +57,7 @@ def load_project_data():
 site_data, history, api = load_project_data()
 
 # --- 3. WORKABILITY LOGIC ---
+# Standardizing color-coded status for site operations
 if api < 0.30:
     work_status, work_color = "OPTIMAL", "green"
 elif api < 0.60:
@@ -76,30 +77,48 @@ tab_weather, tab_grading, tab_swppp, tab_crane = st.tabs(["Weather", "Grading", 
 with tab_weather:
     st.header("METEOROLOGICAL INTELLIGENCE")
     
-    # RADAR INTERFACE
-    st.subheader("Interactive Radar Feeds")
-    # National/Regional View
-    st.components.v1.iframe("https://radar.weather.gov/", height=500)
+    # TRIPLE RADAR INTERFACE
+    st.subheader("Live Radar Surveillance")
+    r1, r2, r3 = st.columns(3)
     
+    with r1:
+        st.write("**Local Radar (Wilson Sector)**")
+        # Embedding local NWS radar view
+        st.markdown('<iframe src="https://radar.weather.gov/ridge/standard/KRAX_0.png" width="100%" height="300" style="border:none;"></iframe>', unsafe_allow_html=True)
+    
+    with r2:
+        st.write("**Regional Radar (Mid-Atlantic)**")
+        # Embedding regional NWS radar view
+        st.markdown('<iframe src="https://radar.weather.gov/ridge/standard/SOUTH_ATLANTIC_0.png" width="100%" height="300" style="border:none;"></iframe>', unsafe_allow_html=True)
+        
+    with r3:
+        st.write("**National Radar (CONUS)**")
+        # Embedding national NWS radar view
+        st.markdown('<iframe src="https://radar.weather.gov/ridge/standard/CONUS_0.png" width="100%" height="300" style="border:none;"></iframe>', unsafe_allow_html=True)
+
+    st.markdown("---")
+    
+    # Precipitation & Lightning Data
     col_w1, col_w2 = st.columns(2)
     with col_w1:
-        st.subheader("Precipitation Analytics")
+        st.subheader("Precipitation Data")
         st.write(f"**Actual (24h):** {site_data['precipitation']['actual_24h']} IN")
         st.write(f"**Forecast Probability:** {site_data['precipitation']['forecast_prob']}%")
         if history is not None:
             st.line_chart(history.set_index('date')['precip_actual'])
             
     with col_w2:
-        st.subheader("Lightning & Soil Data")
+        st.subheader("Lightning & Soil Metrics")
         st.write(f"**Lightning Forecast:** {site_data['lightning']['forecast']}")
         st.write(f"**Recent Strikes (50mi):** {site_data['lightning']['recent_strikes_50mi']}")
         st.write(f"**Current Soil Saturation (API):** {round(api, 2)}")
 
 with tab_grading:
     st.header("GRADING OPERATIONS & SOIL WORKABILITY")
+    # Color-coded soil moisture status
     st.markdown(f"### CURRENT WORKABILITY: :{work_color}[{work_status}]")
     st.metric("Soil Saturation Index", f"{round(api, 2)}", delta=work_status, delta_color="inverse")
-    st.info("Status is calculated based on the 5-day Antecedent Precipitation Index (API).")
+    st.info("Status reflects the 5-day Antecedent Precipitation Index (API) for the 148.2 disturbed acres.")
 
 with tab_swppp:
     st.header("ENVIRONMENTAL & SWPPP COMPLIANCE")
@@ -110,10 +129,9 @@ with tab_swppp:
         st.write(f"**Available Freeboard:** {site_data['swppp']['freeboard_feet']} FT")
         st.progress(site_data['swppp']['sb3_capacity_pct'] / 100)
     with col_s2:
-        st.subheader("Site Perimeter Integrity")
+        st.subheader("Perimeter Controls")
         st.write(f"**Disturbed Acreage:** {site_data['swppp']['disturbed_acres']} AC")
         st.write(f"**Silt Fence Status:** {site_data['swppp']['silt_fence_integrity']}")
-        st.write("**Location:** Basin SB3 is situated at the NW property low point.")
 
 with tab_crane:
     st.header("CRANE & LIFT OPERATIONS SAFETY")
@@ -122,13 +140,13 @@ with tab_crane:
         st.metric("Wind Speed", f"{site_data['crane_safety']['wind_speed']} MPH")
         st.metric("Max Gusts", f"{site_data['crane_safety']['max_gust']} MPH")
     with cc2:
-        st.write(f"**Crane Operational Status:** {site_data['crane_safety']['status']}")
-        st.write(f"**Lightning Threat Level:** {site_data['lightning']['forecast']}")
-        st.write(f"**Soil Bearing Capacity Status:** {work_status}")
+        st.write(f"**Crane Safety Status:** {site_data['crane_safety']['status']}")
+        st.write(f"**Lightning Threat:** {site_data['lightning']['forecast']}")
+        st.write(f"**Soil Bearing Stability:** {work_status}")
     
     if site_data['crane_safety']['max_gust'] > 25:
-        st.error("WIND ALARM: Peak gusts exceed safe limits. Engineering review mandatory for lift operations.")
+        st.error("WIND ALARM: Peak gusts exceed 25 MPH. Engineering safety protocols in effect.")
 
-# --- 6. SYSTEM ADMINISTRATION (SIDEBAR) ---
+# --- 6. SYSTEM ADMIN (SIDEBAR) ---
 with st.sidebar.expander("SYSTEM ADMINISTRATION"):
     st.json(site_data)
