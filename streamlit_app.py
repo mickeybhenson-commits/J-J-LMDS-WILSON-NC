@@ -46,26 +46,21 @@ def load_digital_twin():
 
 site_data, api_val = load_digital_twin()
 
-# --- 3. LOGIC (FIXES NAMEERROR) ---
-# Initialize alert variables to None to prevent NameErrors
-sediment_alert = None
-forecast_rain = site_data.get('precipitation', {}).get('forecast_prob', 0)
+# --- 3. ANALYTICAL LOGIC ---
+# Operational thresholds
 sediment_pct = site_data.get('swppp', {}).get('sb3_sediment_pct', 25)
+wind_gust = site_data.get('crane_safety', {}).get('max_gust', 0)
+lightning_dist = site_data.get('lightning', {}).get('recent_strikes_50mi', 0)
+forecast_rain = site_data.get('precipitation', {}).get('forecast_prob', 0)
 
 if api_val < 0.30:
-    status, color, grading_rec = "OPTIMAL", "#0B8A1D", "Soil stability is high. Unrestricted grading authorized."
+    status, color, grading_rec = "OPTIMAL", "#0B8A1D", "Soil stability high. Full earthwork authorized."
 elif api_val < 0.60:
     status, color, grading_rec = "SATURATED", "#FFAA00", "Limit heavy equipment to stabilized roads."
 elif api_val < 0.85:
-    status, color, grading_rec = "CRITICAL", "#FF6600", "High rutting risk. Restrict mass grading."
+    status, color, grading_rec = "CRITICAL", "#FF6600", "High rutting risk. Restrict grading."
 else:
     status, color, grading_rec = "RESTRICTED", "#B00000", "SITE CLOSED TO GRADING."
-
-# Maintenance thresholds
-if sediment_pct >= 50:
-    sediment_alert = f"🚨 LEGAL CRITICAL: Basin SB3 sediment at {sediment_pct}%. Clean-out required per NCDENR."
-elif sediment_pct >= 25:
-    sediment_alert = f"⚠️ MAINTENANCE WARNING: Basin SB3 sediment at {sediment_pct}%. Clean-out recommended."
 
 # --- 4. EXECUTIVE INTERFACE ---
 st.markdown(f"""
@@ -86,41 +81,45 @@ with col_l:
     st.write(f"**Action:** {grading_rec}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Executive Advisory (Fixes NameError at line 107)
+    # Executive Advisory: Storm Prep & Safety
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">Executive Advisory: Storm Prep & Infrastructure</div>', unsafe_allow_html=True)
+    st.markdown('<div class="directive-header">Executive Advisory: Safety & Infrastructure</div>', unsafe_allow_html=True)
     
+    # Combined Safety & Maintenance Logic
+    if wind_gust > 25:
+        st.markdown(f'<div class="risk-item">🚨 CRANE ALERT: Gusts at {wind_gust} MPH. Suspend high-profile lifts immediately.</div>', unsafe_allow_html=True)
+    if lightning_dist > 0:
+        st.markdown(f'<div class="risk-item">⚡ LIGHTNING ALERT: Strikes detected within 50 miles. Monitor site proximity.</div>', unsafe_allow_html=True)
     if status == "OPTIMAL" and sediment_pct >= 25:
-        st.markdown(f'<div class="optimal-item">COMMAND DIRECTIVE: Current Soil Status is OPTIMAL. Execute clean-out of Basin SB3 immediately while conditions are dry to restore hydraulic buffer.</div>', unsafe_allow_html=True)
-    elif sediment_alert:
-        st.markdown(f'<div class="risk-item">{sediment_alert}</div>', unsafe_allow_html=True)
-
-    if forecast_rain > 50:
-        st.markdown(f'<div class="risk-item">STORM HEADS-UP: {forecast_rain}% Precip Probability. Ensure silt fence integrity.</div>', unsafe_allow_html=True)
-    elif not sediment_alert and forecast_rain <= 50:
-        st.success("No immediate operational impediments forecast for the 48-hour window.")
+        st.markdown(f'<div class="optimal-item">MAINTENANCE DIRECTIVE: Status is OPTIMAL. Execute Basin SB3 clean-out while dry.</div>', unsafe_allow_html=True)
+    elif sediment_pct >= 50:
+        st.markdown(f'<div class="risk-item">🚨 LEGAL CRITICAL: Basin SB3 sediment at {sediment_pct}%. Mandatory clean-out required.</div>', unsafe_allow_html=True)
+    
+    if not (wind_gust > 25 or lightning_dist > 0 or sediment_pct >= 25):
+        st.success("No immediate safety or infrastructure impediments forecast.")
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Windy Interactive Radar
     st.components.v1.html(f"""
-        <iframe width="100%" height="400" 
+        <iframe width="100%" height="450" 
             src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&zoom=9&level=surface&overlay=radar" 
             frameborder="0" style="border-radius:8px;"></iframe>
-    """, height=410)
+    """, height=460)
 
 with col_r:
-    # Operational Metrics
+    # Operational Metrics Sidebar
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">Real-Time Metrics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="directive-header">Operational Metrics</div>', unsafe_allow_html=True)
     st.metric("Soil Moisture (API)", api_val)
-    st.metric("Basin SB3 Capacity", f"{site_data.get('swppp', {}).get('sb3_capacity_pct', 58)}%")
+    st.metric("Rain Forecast", f"{forecast_rain}%")
+    st.metric("Max Wind Gust", f"{wind_gust} MPH")
+    st.metric("Lightning Strikes (50mi)", lightning_dist)
     st.metric("Sediment Level", f"{sediment_pct}%")
     st.caption(f"Last Sync: {dt.datetime.now().strftime('%H:%M:%S')}")
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">Site Intelligence</div>', unsafe_allow_html=True)
-    st.write(f"**Project Area:** 148.2 Disturbed Acres")
-    st.write(f"**Freeboard:** {site_data.get('swppp', {}).get('freeboard_feet', 1.5)} FT")
-    st.write(f"**Satellite Analysis:** Skimmer functioning; perimeter silt fence integrity confirmed.")
+    st.markdown('<div class="directive-header">Infrastructure Analysis</div>', unsafe_allow_html=True)
+    st.write(f"**Basin SB3 Freeboard:** {site_data.get('swppp', {}).get('freeboard_feet', 1.5)} FT")
+    st.write(f"**Satellite Observation:** Perimeter silt fence integrity confirmed; basin skimmer functioning.")
     st.markdown("</div>", unsafe_allow_html=True)
