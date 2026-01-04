@@ -12,20 +12,22 @@ DATA_DIR = Path("data")
 SITE_FILE = DATA_DIR / "site_status.json"
 HISTORY_FILE = DATA_DIR / "history.csv"
 
-RADAR_IFRAME = """
+RADAR_IFRAME = r'''
 <div class="radar-container" style="height: 100%;">
   <iframe width="100%" height="700"
     src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&detailLat=35.726&detailLon=-77.916&width=300&height=700&zoom=10&level=surface&overlay=radar&product=ecmwf&menu=&message=&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=mph&metricTemp=%C2%B0F&radarRange=-1"
     frameborder="0"></iframe>
 </div>
-"""
+'''
 
-# --- PAGE CONFIGURATION ---
+# =========================
+# PAGE CONFIG
+# =========================
 st.set_page_config(
     page_title="Wayne Brothers - J&J Wilson NC",
     page_icon="🏗️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # =========================
@@ -37,7 +39,6 @@ def apply_professional_styling():
     st.markdown(
         f"""
         <style>
-        /* Background image */
         .stApp {{
             background-image: url("{bg_url}");
             background-attachment: fixed;
@@ -45,7 +46,7 @@ def apply_professional_styling():
             background-position: center;
         }}
 
-        /* Overlay (use fixed + pointer-events:none so it won't block clicks) */
+        /* Overlay that won't block clicks */
         .stApp:before {{
             content: "";
             position: fixed;
@@ -55,13 +56,11 @@ def apply_professional_styling():
             z-index: 0;
         }}
 
-        /* Ensure app content is above overlay */
         section.main, header, footer, [data-testid="stSidebar"] {{
             position: relative;
             z-index: 1;
         }}
 
-        /* Headings */
         h1 {{
             color: #FFFFFF !important;
             font-size: 1.8rem !important;
@@ -73,12 +72,10 @@ def apply_professional_styling():
             text-shadow: 2px 2px 4px rgba(0,0,0,0.45);
         }}
 
-        /* Force body text white */
         p, span, div, label, li {{
             color: #FFFFFF !important;
         }}
 
-        /* Status badges */
         .status-badge {{
             display: inline-block;
             padding: 10px 16px;
@@ -94,7 +91,6 @@ def apply_professional_styling():
         .status-critical {{ background-color: #FF6600; color: white; }}
         .status-restricted {{ background-color: #B00000; color: white; }}
 
-        /* Alert boxes */
         .alert-box {{
             padding: 14px 14px;
             border-radius: 10px;
@@ -112,40 +108,48 @@ def apply_professional_styling():
             color: #FFE9C6;
         }}
 
-        /* Radar */
         .radar-container {{
             background-color: rgba(20,20,25,0.90);
             border-radius: 10px;
             padding: 10px;
         }}
 
-        /* Divider */
         .section-divider {{
             border-top: 2px solid rgba(255,255,255,0.18);
             margin: 18px 0;
         }}
         </style>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 apply_professional_styling()
 
 # =========================
-# DATA LOADING (CACHED)
+# HELPERS
 # =========================
+def safe_get(d: dict, path: list, default=None):
+    cur = d
+    for key in path:
+        if not isinstance(cur, dict):
+            return default
+        cur = cur.get(key, default)
+    return cur
+
 @st.cache_data(show_spinner=False)
-def load_site_data(site_file: Path) -> dict:
-    if not site_file.exists():
-        raise FileNotFoundError(f"Site data not found: {site_file}")
-    with open(site_file, "r", encoding="utf-8") as f:
+def load_site_data(site_file: str) -> dict:
+    p = Path(site_file)
+    if not p.exists():
+        raise FileNotFoundError(f"Site data not found: {p}")
+    with open(p, "r", encoding="utf-8") as f:
         return json.load(f)
 
 @st.cache_data(show_spinner=False)
-def load_history(history_file: Path) -> pd.DataFrame:
-    if not history_file.exists():
+def load_history(history_file: str) -> pd.DataFrame:
+    p = Path(history_file)
+    if not p.exists():
         return pd.DataFrame()
-    df = pd.read_csv(history_file)
+    df = pd.read_csv(p)
     if "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         df = df.dropna(subset=["date"])
@@ -157,8 +161,7 @@ def calculate_api(history_df: pd.DataFrame, days: int = 5, decay: float = 0.85) 
 
     recent = history_df.tail(days)["precip_actual"].fillna(0).astype(float).tolist()
     api_value = 0.0
-    # most recent gets decay^0, previous decay^1, ...
-    for i, rain in enumerate(reversed(recent)):
+    for i, rain in enumerate(reversed(recent)):  # most recent has i=0
         api_value += rain * (decay ** i)
     return round(api_value, 3)
 
@@ -174,34 +177,25 @@ class WorkabilityAnalyzer:
             return ("OPTIMAL", [
                 "Full operations authorized",
                 "All earthwork activities permitted",
-                "Minimal environmental restrictions"
+                "Minimal environmental restrictions",
             ])
-        elif api < cls.THRESHOLDS["saturated"]:
+        if api < cls.THRESHOLDS["saturated"]:
             return ("SATURATED", [
                 "Monitor soil conditions closely",
                 "Limit heavy equipment in low areas",
-                "Increase stabilization measures"
+                "Increase stabilization measures",
             ])
-        elif api < cls.THRESHOLDS["critical"]:
+        if api < cls.THRESHOLDS["critical"]:
             return ("CRITICAL", [
                 "Restrict non-essential grading",
                 "Implement erosion controls",
-                "Daily soil moisture testing required"
+                "Daily soil moisture testing required",
             ])
-        else:
-            return ("RESTRICTED", [
-                "STOP all earthwork operations",
-                "Emergency erosion control only",
-                "Contact project engineer immediately"
-            ])
-
-def safe_get(d: dict, path: list, default=None):
-    cur = d
-    for key in path:
-        if not isinstance(cur, dict):
-            return default
-        cur = cur.get(key, default)
-    return cur
+        return ("RESTRICTED", [
+            "STOP all earthwork operations",
+            "Emergency erosion control only",
+            "Contact project engineer immediately",
+        ])
 
 # =========================
 # ALERTS
@@ -213,38 +207,38 @@ def generate_alerts(site_data: dict, api: float, work_status: str):
     strikes = safe_get(site_data, ["lightning", "recent_strikes_50mi"], 0)
     sb3_capacity = safe_get(site_data, ["swppp", "sb3_capacity_pct"], 0)
 
-    if max_gust and max_gust > 25:
+    if max_gust and float(max_gust) > 25:
         alerts.append({
             "level": "danger",
             "title": "WIND ALERT",
-            "message": f"Peak gusts of {max_gust} MPH exceed safe lifting threshold (25 MPH). Suspend crane operations and secure all materials."
+            "message": f"Peak gusts of {max_gust} MPH exceed safe lifting threshold (25 MPH). Suspend crane operations and secure all materials.",
         })
 
-    if strikes and strikes > 0:
+    if strikes and int(strikes) > 0:
         alerts.append({
             "level": "warning",
             "title": "LIGHTNING DETECTED",
-            "message": f"{strikes} strikes within 50 miles in last hour. Monitor conditions and prepare 30-minute evacuation protocol."
+            "message": f"{strikes} strikes within 50 miles in last hour. Monitor conditions and prepare 30-minute evacuation protocol.",
         })
 
     if work_status == "RESTRICTED":
         alerts.append({
             "level": "danger",
             "title": "SOIL WORKABILITY RESTRICTED",
-            "message": f"API of {round(api, 2)} exceeds threshold. All grading operations must cease until soil conditions improve."
+            "message": f"API of {round(api, 2)} exceeds threshold. All grading operations must cease until soil conditions improve.",
         })
     elif work_status == "CRITICAL":
         alerts.append({
             "level": "warning",
             "title": "SOIL CONDITIONS CRITICAL",
-            "message": f"API of {round(api, 2)} indicates critical saturation. Minimize earthwork and increase monitoring."
+            "message": f"API of {round(api, 2)} indicates critical saturation. Minimize earthwork and increase monitoring.",
         })
 
-    if sb3_capacity and sb3_capacity > 80:
+    if sb3_capacity and float(sb3_capacity) > 80:
         alerts.append({
             "level": "warning",
             "title": "BASIN CAPACITY WARNING",
-            "message": f"Sediment Basin SB3 at {sb3_capacity}% capacity. Coordinate pump-out operations before next rain event."
+            "message": f"Sediment Basin SB3 at {sb3_capacity}% capacity. Coordinate pump-out operations before next rain event.",
         })
 
     return alerts
@@ -253,26 +247,25 @@ def display_alerts(alerts):
     if not alerts:
         st.success("No active alerts — all systems nominal.")
         return
+
     for alert in alerts:
-        alert_class = "alert-danger" if alert["level"] == "danger" else "alert-warning"
+        css_class = "alert-danger" if alert["level"] == "danger" else "alert-warning"
         st.markdown(
             f"""
-            <div class="alert-box {alert_class}">
+            <div class="alert-box {css_class}">
                 <strong>{alert['title']}</strong><br>
                 {alert['message']}
             </div>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
 # =========================
 # MAIN
 # =========================
 def main():
-    # Sidebar
     with st.sidebar:
         st.markdown("### SYSTEM CONTROLS")
-
         auto_refresh = st.checkbox("Auto-Refresh", value=False)
         refresh_interval = st.slider("Refresh Interval (seconds)", 10, 300, 30)
 
@@ -280,25 +273,21 @@ def main():
         st.markdown("### SYSTEM INFO")
         st.write(f"**Server Time:** {dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-        if st.button("Clear Cache (Data Reload)"):
+        if st.button("Clear Cache (Force Reload)"):
             st.cache_data.clear()
             st.rerun()
 
-    # Auto-refresh (non-blocking pattern)
+    # Auto-refresh without blocking the UI
     if auto_refresh:
         st.caption(f"Auto-refresh enabled (every {refresh_interval}s).")
-        st.session_state["_next_refresh"] = dt.datetime.now() + dt.timedelta(seconds=refresh_interval)
-        st.experimental_set_query_params(_r=str(dt.datetime.now().timestamp()))
-        # Use rerun timer without sleep blocking UI:
         st.markdown(
             f"<meta http-equiv='refresh' content='{refresh_interval}'>",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
-    # Load
     try:
-        site_data = load_site_data(SITE_FILE)
-        history = load_history(HISTORY_FILE)
+        site_data = load_site_data(str(SITE_FILE))
+        history = load_history(str(HISTORY_FILE))
     except Exception as e:
         st.error(f"SYSTEM STATUS: {e}")
         st.info("Check the data directory, file paths, and permissions.")
@@ -312,33 +301,25 @@ def main():
     col_title, col_status = st.columns([3, 1])
     with col_title:
         st.title(APP_TITLE)
-        last_updated = site_data.get("last_updated", "Unknown")
-        st.caption(f"Last Updated: {last_updated} | API: {api}")
+        st.caption(f"Last Updated: {site_data.get('last_updated', 'Unknown')} | API: {api}")
 
     with col_status:
         status_class = f"status-{work_status.lower()}"
         st.markdown(
-            f"""
-            <div class="status-badge {status_class}">
-                SITE STATUS: {work_status}
-            </div>
-            """,
-            unsafe_allow_html=True
+            f"""<div class="status-badge {status_class}">SITE STATUS: {work_status}</div>""",
+            unsafe_allow_html=True,
         )
 
-    # Alerts
     with st.expander("ACTIVE ALERTS & NOTIFICATIONS", expanded=len(alerts) > 0):
         display_alerts(alerts)
 
-    # Tabs
     tab_weather, tab_grading, tab_swppp, tab_crane, tab_analytics = st.tabs(
         ["Weather", "Grading", "SWPPP", "Crane", "Analytics"]
     )
 
-    # WEATHER
+    # WEATHER TAB
     with tab_weather:
         st.header("Meteorological Intelligence")
-
         main_col, radar_col = st.columns([3, 1])
 
         with main_col:
@@ -358,8 +339,7 @@ def main():
 
             if not history.empty and "date" in history.columns and "precip_actual" in history.columns:
                 st.subheader("7-Day Precipitation History")
-                chart_data = history.tail(7).set_index("date")["precip_actual"]
-                st.line_chart(chart_data, height=250)
+                st.line_chart(history.tail(7).set_index("date")["precip_actual"], height=250)
             else:
                 st.info("No historical precipitation data available yet.")
 
@@ -381,10 +361,9 @@ def main():
             st.markdown("**Wilson, NC**")
             st.components.v1.html(RADAR_IFRAME, height=720)
 
-    # GRADING
+    # GRADING TAB
     with tab_grading:
         st.header("Grading Operations & Soil Workability")
-
         left, right = st.columns([2, 3])
 
         with left:
@@ -392,7 +371,7 @@ def main():
             status_class = f"status-{work_status.lower()}"
             st.markdown(
                 f"""<div class="status-badge {status_class}" style="font-size:1.4em;padding:18px;">{work_status}</div>""",
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
             st.metric("Antecedent Precipitation Index", f"{api}", help="5-day weighted rainfall index representing soil moisture")
             st.progress(min(api / 1.0, 1.0))
@@ -417,6 +396,167 @@ def main():
 
             with st.expander("About API Calculation"):
                 st.markdown(
-                    """
-**API** is a weighted measure of recent rainfall indicating soil moisture:
+                    "**API** is a weighted measure of recent rainfall indicating soil moisture:\n\n"
+                    "```\n"
+                    "API = Σ (Rainfall_i × 0.85^i)\n"
+                    "```\n\n"
+                    "where `i` is the number of days ago (most recent rain has the highest weight)."
+                )
 
+    # SWPPP TAB
+    with tab_swppp:
+        st.header("Environmental & SWPPP Compliance")
+        c1, c2 = st.columns(2)
+
+        with c1:
+            st.subheader("Sediment Basin SB3")
+            capacity_pct = safe_get(site_data, ["swppp", "sb3_capacity_pct"], 0)
+            freeboard = safe_get(site_data, ["swppp", "freeboard_feet"], "Unknown")
+
+            st.metric("Current Capacity", f"{capacity_pct}%")
+            st.metric("Available Freeboard", f"{freeboard} FT")
+
+            try:
+                cap = float(capacity_pct)
+            except Exception:
+                cap = 0.0
+
+            if cap < 70:
+                st.progress(cap / 100)
+            elif cap < 85:
+                st.warning(f"Basin at {capacity_pct}% — monitor closely.")
+                st.progress(cap / 100)
+            else:
+                st.error(f"Basin at {capacity_pct}% — action required.")
+                st.progress(cap / 100)
+
+            st.caption("**Location:** NW property low point")
+
+        with c2:
+            st.subheader("Perimeter Controls")
+            disturbed = safe_get(site_data, ["swppp", "disturbed_acres"], "Unknown")
+            silt = safe_get(site_data, ["swppp", "silt_fence_integrity"], "Unknown")
+
+            st.metric("Disturbed Acreage", f"{disturbed} AC")
+            st.write(f"**Silt Fence Status:** {silt}")
+
+            st.markdown("---")
+            st.markdown("**Control Measures:**")
+            st.write("• Silt fence perimeter")
+            st.write("• Inlet protection devices")
+            st.write("• Sediment basin SB3")
+            st.write("• Stabilized construction entrance")
+
+        with st.expander("Daily Inspection Checklist"):
+            st.checkbox("Basin freeboard adequate (>1.0 ft)", value=True)
+            st.checkbox("Silt fence integrity maintained", value=True)
+            st.checkbox("Inlet protection in place", value=True)
+            st.checkbox("No off-site sediment discharge", value=True)
+            st.checkbox("Stabilized areas maintained", value=True)
+
+    # CRANE TAB
+    with tab_crane:
+        st.header("Crane & Lift Operations Safety")
+
+        a, b, c = st.columns(3)
+        wind_speed = safe_get(site_data, ["crane_safety", "wind_speed"], 0)
+        max_gust = safe_get(site_data, ["crane_safety", "max_gust"], 0)
+        crane_status = safe_get(site_data, ["crane_safety", "status"], "Unknown")
+        lightning_forecast = safe_get(site_data, ["lightning", "forecast"], "Unknown")
+        strikes_50 = safe_get(site_data, ["lightning", "recent_strikes_50mi"], 0)
+
+        with a:
+            st.subheader("Wind Conditions")
+            st.metric("Current Wind Speed", f"{wind_speed} MPH")
+            st.metric("Maximum Gusts", f"{max_gust} MPH")
+            try:
+                gust = float(max_gust)
+            except Exception:
+                gust = 0.0
+
+            if gust < 20:
+                st.success("Safe for all operations")
+            elif gust < 25:
+                st.warning("Monitor conditions")
+            else:
+                st.error("Suspend operations")
+
+        with b:
+            st.subheader("Environmental")
+            st.write(f"**Lightning Threat:** {lightning_forecast}")
+            st.write(f"**Recent Strikes (50mi):** {strikes_50}")
+            st.write(f"**Overall Status:** {crane_status}")
+
+        with c:
+            st.subheader("Ground Conditions")
+            st.write(f"**Soil Workability:** {work_status}")
+            st.write(f"**API Index:** {round(api, 2)}")
+            if work_status in ("CRITICAL", "RESTRICTED"):
+                st.warning("Verify crane pad stability")
+
+        st.markdown("---")
+        st.subheader("Lift Operations Protocol")
+        p1, p2 = st.columns(2)
+        with p1:
+            st.markdown("**Pre-Lift Checklist:**")
+            st.write("• Wind gusts < 25 MPH")
+            st.write("• No active lightning within 50 miles")
+            st.write("• Ground conditions stable")
+            st.write("• Load charts verified")
+            st.write("• Competent person on-site")
+        with p2:
+            st.markdown("**Stop Work Conditions:**")
+            st.write("• Wind gusts > 25 MPH")
+            st.write("• Lightning within 10 miles")
+            st.write("• Visibility < 100 feet")
+            st.write("• Ground stability concerns")
+            st.write("• Equipment malfunction")
+
+    # ANALYTICS TAB
+    with tab_analytics:
+        st.header("Historical Analytics & Trends")
+
+        if history.empty:
+            st.warning("No historical data available for analysis.")
+        else:
+            left, right = st.columns(2)
+
+            with left:
+                st.subheader("Precipitation Trends")
+                days_to_show = st.slider("Days to Display", 7, 30, 14)
+                recent = history.tail(days_to_show)
+
+                if "date" in recent.columns and "precip_actual" in recent.columns:
+                    st.line_chart(recent.set_index("date")["precip_actual"])
+                    st.metric("Total Precipitation", f"{round(recent['precip_actual'].sum(), 2)} IN")
+                    st.metric("Daily Average", f"{round(recent['precip_actual'].mean(), 3)} IN")
+
+            with right:
+                st.subheader("Workability History")
+                if "precip_actual" in history.columns and "date" in history.columns and len(history) >= 5:
+                    api_history = []
+                    for i in range(len(history) - 4):
+                        subset = history.iloc[i:i+5]
+                        api_i = calculate_api(subset)
+                        status_i, _ = WorkabilityAnalyzer.assess(api_i)
+                        api_history.append({"date": subset.iloc[-1]["date"], "api": api_i, "status": status_i})
+
+                    api_df = pd.DataFrame(api_history).dropna(subset=["date"])
+                    if not api_df.empty:
+                        st.line_chart(api_df.set_index("date")["api"])
+                        st.bar_chart(api_df["status"].value_counts())
+                else:
+                    st.info("Need at least 5 days of history to compute workability history.")
+
+    # Footer
+    st.markdown("---")
+    f1, f2, f3 = st.columns(3)
+    with f1:
+        st.caption("Contractor Defense Portal v2.1")
+    with f2:
+        st.caption("Powered by Real-Time Environmental Monitoring")
+    with f3:
+        st.caption(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+if __name__ == "__main__":
+    main()
