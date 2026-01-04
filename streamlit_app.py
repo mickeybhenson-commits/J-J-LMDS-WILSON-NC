@@ -20,14 +20,10 @@ def apply_industrial_premium_styling():
         .stApp {{ background-image: url("{bg_url}"); background-attachment: fixed; background-size: cover; font-family: 'Inter', sans-serif; }}
         .stApp:before {{ content: ""; position: fixed; inset: 0; background: radial-gradient(circle at center, rgba(0,0,0,0.85), rgba(0,0,0,0.95)); z-index: 0; }}
         section.main {{ position: relative; z-index: 1; }}
-
         .exec-header {{ margin-bottom: 30px; border-left: 8px solid #CC0000; padding-left: 25px; }}
         .exec-title {{ font-size: 3.5em; font-weight: 900; letter-spacing: -2px; line-height: 1; color: #FFFFFF; margin: 0; }}
-        .exec-subtitle {{ font-size: 1.4em; color: #AAAAAA; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px; }}
-
         .report-section {{ background: rgba(20, 20, 25, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 25px; margin-bottom: 25px; }}
         .directive-header {{ color: #CC0000; font-weight: 900; text-transform: uppercase; font-size: 0.8em; margin-bottom: 10px; }}
-        
         .risk-item {{ border-left: 5px solid #CC0000; padding: 15px; margin-bottom: 15px; background: rgba(204, 0, 0, 0.1); font-weight: 600; color: #FFD6D6; }}
         .optimal-item {{ border-left: 5px solid #0B8A1D; padding: 15px; margin-bottom: 15px; background: rgba(11, 138, 29, 0.1); font-weight: 600; color: #D6FFD6; }}
         </style>
@@ -50,8 +46,12 @@ def load_digital_twin():
 
 site_data, api_val = load_digital_twin()
 
-# --- 3. ANALYTICAL LOGIC ---
-# Soil Workability Logic
+# --- 3. LOGIC (FIXES NAMEERROR) ---
+# Initialize alert variables to None to prevent NameErrors
+sediment_alert = None
+forecast_rain = site_data.get('precipitation', {}).get('forecast_prob', 0)
+sediment_pct = site_data.get('swppp', {}).get('sb3_sediment_pct', 25)
+
 if api_val < 0.30:
     status, color, grading_rec = "OPTIMAL", "#0B8A1D", "Soil stability is high. Unrestricted grading authorized."
 elif api_val < 0.60:
@@ -61,62 +61,55 @@ elif api_val < 0.85:
 else:
     status, color, grading_rec = "RESTRICTED", "#B00000", "SITE CLOSED TO GRADING."
 
-# Sediment Level Thresholds
-# Note: Dashboard current state shows 25% sediment level
-sediment_pct = site_data.get('swppp', {}).get('sb3_sediment_pct', 25) 
-forecast_rain = site_data.get('precipitation', {}).get('forecast_prob', 0)
+# Maintenance thresholds
+if sediment_pct >= 50:
+    sediment_alert = f"🚨 LEGAL CRITICAL: Basin SB3 sediment at {sediment_pct}%. Clean-out required per NCDENR."
+elif sediment_pct >= 25:
+    sediment_alert = f"⚠️ MAINTENANCE WARNING: Basin SB3 sediment at {sediment_pct}%. Clean-out recommended."
 
-# --- 4. EXECUTIVE COMMAND INTERFACE ---
-
-# Header block
+# --- 4. EXECUTIVE INTERFACE ---
 st.markdown(f"""
     <div class="exec-header">
         <div class="exec-title">Wayne Brothers</div>
-        <div class="exec-subtitle">Johnson & Johnson Biologics Manufacturing Facility</div>
+        <div style="font-size:1.4em; color:#AAA; text-transform:uppercase;">Johnson & Johnson Biologics Manufacturing Facility</div>
         <div style="color:#777;">Wilson, NC | 148.2 Disturbed Acres</div>
     </div>
 """, unsafe_allow_html=True)
 
-col_main, col_metrics = st.columns([2, 1])
+col_l, col_r = st.columns([2, 1])
 
-with col_main:
-    # A. PRIMARY FIELD DIRECTIVE
+with col_l:
+    # Field Operational Directive
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Field Operational Directive</div>', unsafe_allow_html=True)
     st.markdown(f"<h1 style='color:{color}; margin:0;'>STATUS: {status}</h1>", unsafe_allow_html=True)
     st.write(f"**Action:** {grading_rec}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # B. MAINTENANCE ADVISORY
+    # Executive Advisory (Fixes NameError at line 107)
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Executive Advisory: Storm Prep & Infrastructure</div>', unsafe_allow_html=True)
     
     if status == "OPTIMAL" and sediment_pct >= 25:
-        st.markdown(f"""
-            <div class="optimal-item">
-                COMMAND DIRECTIVE: Current Soil Status is OPTIMAL. Execute clean-out of Basin SB3 immediately 
-                to restore hydraulic capacity while conditions are dry. Emptying sediment now reset the 
-                legal limit buffer before the next storm event.
-            </div>
-        """, unsafe_allow_html=True)
-    elif sediment_pct >= 50:
-        st.markdown(f'<div class="risk-item">🚨 LEGAL CRITICAL: Basin SB3 sediment at {sediment_pct}%. Immediate clean-out required per NCDENR standards.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="optimal-item">COMMAND DIRECTIVE: Current Soil Status is OPTIMAL. Execute clean-out of Basin SB3 immediately while conditions are dry to restore hydraulic buffer.</div>', unsafe_allow_html=True)
+    elif sediment_alert:
+        st.markdown(f'<div class="risk-item">{sediment_alert}</div>', unsafe_allow_html=True)
 
     if forecast_rain > 50:
-        st.markdown(f'<div class="risk-item">STORM HEADS-UP: {forecast_rain}% Precip Probability. Ensure silt fence integrity on East Perimeter low points.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="risk-item">STORM HEADS-UP: {forecast_rain}% Precip Probability. Ensure silt fence integrity.</div>', unsafe_allow_html=True)
     elif not sediment_alert and forecast_rain <= 50:
         st.success("No immediate operational impediments forecast for the 48-hour window.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # C. RADAR SURVEILLANCE
+    # Windy Interactive Radar
     st.components.v1.html(f"""
-        <iframe width="100%" height="450" 
+        <iframe width="100%" height="400" 
             src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&zoom=9&level=surface&overlay=radar" 
             frameborder="0" style="border-radius:8px;"></iframe>
-    """, height=460)
+    """, height=410)
 
-with col_metrics:
-    # D. OPERATIONAL METRICS
+with col_r:
+    # Operational Metrics
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Real-Time Metrics</div>', unsafe_allow_html=True)
     st.metric("Soil Moisture (API)", api_val)
@@ -126,8 +119,8 @@ with col_metrics:
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">Compliance Detail</div>', unsafe_allow_html=True)
+    st.markdown('<div class="directive-header">Site Intelligence</div>', unsafe_allow_html=True)
     st.write(f"**Project Area:** 148.2 Disturbed Acres")
     st.write(f"**Freeboard:** {site_data.get('swppp', {}).get('freeboard_feet', 1.5)} FT")
-    st.write(f"**Satellite Observation:** Basin skimmer functioning; perimeter silt fence integrity confirmed.")
+    st.write(f"**Satellite Analysis:** Skimmer functioning; perimeter silt fence integrity confirmed.")
     st.markdown("</div>", unsafe_allow_html=True)
