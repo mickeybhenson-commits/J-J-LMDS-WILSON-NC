@@ -2,8 +2,8 @@ name: Daily SWPPP and Weather Update
 
 on:
   schedule:
-    - cron: '0 12 * * *' # Runs at 7:00 AM EST every day
-  workflow_dispatch: # Allows you to run it manually
+    - cron: '0 12 * * *' # Runs at 7:00 AM EST (12:00 UTC)
+  workflow_dispatch:      # Allows manual testing
 
 jobs:
   update-dashboard:
@@ -19,20 +19,10 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install requests PyGithub
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run Update Script
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          # This assumes you have an updater.py in your repo 
-          # to fetch USGS and Satellite data
-          python scripts/updater.py 
-
-      - name: Commit and Push Changes
-        run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
-          git add data/site_status.json
-          git commit -m "Automated Site Status Update" || exit 0
-          git push
+        run: python scripts/updater.py
