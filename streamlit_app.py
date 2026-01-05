@@ -40,10 +40,10 @@ current_dt = dt.datetime.now()
 current_time = current_dt.strftime('%H:%M')
 current_day = current_dt.strftime('%a') 
 
-# Updated Tactical Logic: Tuesday now mirrors Monday (MAINTENANCE/YELLOW)
+# Updated Tactical Logic: Tuesday now matches Monday's Priority Task
 tactical_map = {
     "Mon": {"status": "MAINTENANCE", "color": "#FFFF00", "hi": 55, "lo": 29, "pop": "10%", "in": "0.00\"", "task": "PRIORITY: Clean Basin SB3 + Inspect Silt Fences"},
-    "Tue": {"status": "MAINTENANCE", "color": "#FFFF00", "hi": 60, "lo": 41, "pop": "10%", "in": "0.01\"", "task": "PRE-STORM: Deploy Filtration Vessel + Armor Low Points"},
+    "Tue": {"status": "MAINTENANCE", "color": "#FFFF00", "hi": 60, "lo": 41, "pop": "10%", "in": "0.01\"", "task": "PRIORITY: Clean Basin SB3 + Inspect Silt Fences"},
     "Wed": {"status": "CRITICAL", "color": "#FF0000", "hi": 67, "lo": 44, "pop": "80%", "in": "0.55\"", "task": "STORM ACTION: Runoff Surge Monitoring (High Risk)"},
     "Thu": {"status": "RESTRICTED", "color": "#FF8C00", "hi": 64, "lo": 43, "pop": "40%", "in": "0.10\"", "task": "Saturated: Limit Heavy Hauling / Protect Subgrade"},
     "Fri": {"status": "CAUTION", "color": "#FFFF00", "hi": 71, "lo": 48, "pop": "20%", "in": "0.00\"", "task": "Drying: Monitor Sediment Trap Recovery"},
@@ -99,7 +99,7 @@ with c_main:
     st.markdown('</div>', unsafe_allow_html=True)
 
 with c_metrics:
-    # 4. ANALYTICAL METRICS (PROMINENT SIDEBAR)
+    # 4. ANALYTICAL METRICS
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Analytical Metrics</div>', unsafe_allow_html=True)
     st.metric("Soil Moisture (API)", API)
