@@ -55,19 +55,26 @@ def load_site_data():
 site_data, api_val, history_log = load_site_data()
 
 # --- 3. DYNAMIC CONSENSUS FORECAST LOGIC ---
-def get_best_model_forecast(site_data):
-    raw_days = site_data.get('forecast_7day', [])
-    consensus_forecast = []
-    for i, day in enumerate(raw_days):
-        # Day 0-1: HRRR (Radar-based, updated hourly)
-        # Day 2-6: ECMWF (Global benchmark for medium-range)
-        model = "HRRR (High-Res)" if i <= 1 else "ECMWF (Global)"
-        consensus_forecast.append({
-            "day": day['day'],
-            "rain": day['rain'],
-            "model": model
-        })
-    return consensus_forecast
+def get_weighted_forecast(site_data):
+    # This logic automatically selects the 'Best' model for each day
+    raw_forecast = site_data.get('forecast_7day', [])
+    dynamic_days = []
+    
+    for i, day in enumerate(raw_forecast):
+        if i <= 1: # Day 0 and 1: High-Res HRRR dominance
+            source = "HRRR (Live Radar)"
+            rain_prob = day['rain'] 
+        elif i <= 4: # Day 2-4: ECMWF global precision
+            source = "EURO (Medium-Range)"
+            rain_prob = day['rain']
+        else: # Day 5-7: Ensemble Consensus for long-term trends
+            source = "ENSEMBLE (Trend)"
+            rain_prob = day['rain']
+            
+        dynamic_days.append({"day": day['day'], "rain": rain_prob, "source": source})
+    return dynamic_days
+
+dynamic_forecast = get_weighted_forecast(site_data)
 
 consensus_list = get_best_model_forecast(site_data)
 
