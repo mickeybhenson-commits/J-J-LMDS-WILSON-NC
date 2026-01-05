@@ -56,8 +56,10 @@ st.markdown(f"""
 c_main, c_metrics = st.columns([2, 1])
 
 with c_main:
+    # 1. FIELD OPERATIONAL DIRECTIVE
     st.markdown(f'<div class="report-section" style="border-top: 6px solid #0B8A1D;"><div class="directive-header">Field Operational Directive</div><h1 style="color:#0B8A1D; margin:0; font-size:3.5em;">OPTIMAL</h1><p style="font-size:1.3em;">Full grading and basin maintenance authorized.</p></div>', unsafe_allow_html=True)
 
+    # 2. HISTORICAL SEDIMENT VALIDATION
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Historical Sediment Validation</div>', unsafe_allow_html=True)
     v1, v2, v3 = st.columns(3)
@@ -66,6 +68,7 @@ with c_main:
     v3.markdown(f"**Depth**: {hist_report['depth_verify']} <br> <span style='font-size:0.75em; color:#888;'>Spectral Shift (B4/B8A) Confirmed</span>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
+    # 3. EXECUTIVE ADVISORY & TACTICAL SCHEDULE
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Executive Advisory: Safety & Tactical Priority</div>', unsafe_allow_html=True)
     
@@ -84,6 +87,7 @@ with c_main:
         st.markdown(f"<div style='font-size:0.85em; margin-bottom:4px;'>• <b>{d['day']}</b> ({d['hi']}°/{d['lo']}°): <span style='color:{t_color}; font-weight:700;'>{d['task']}</span></div>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
+    # 4. 7-DAY WEATHER OUTLOOK
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">7-Day Weather Outlook</div>', unsafe_allow_html=True)
     f_cols = st.columns(7)
@@ -98,7 +102,7 @@ with c_main:
     st.markdown('</div>', unsafe_allow_html=True)
 
 with c_metrics:
-    # 5. ANALYTICAL METRICS (UPDATED)
+    # 5. ANALYTICAL METRICS (PROMINENT SIDEBAR)
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Analytical Metrics</div>', unsafe_allow_html=True)
     st.metric("Soil Moisture (API)", API)
@@ -110,4 +114,8 @@ with c_metrics:
     st.metric("NC DEQ NTU Limit", "50 NTU")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.components.v1.html(f"""<iframe width="100%" height="450" src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&zoom=9&level=surface&overlay=radar&product=radar&calendar=now" frameborder="0" style="border-radius:8px;"></iframe>""", height=460)
+# --- 6. RADAR SURVEILLANCE (BOTTOM OF PAGE) ---
+st.markdown('<div class="report-section">', unsafe_allow_html=True)
+st.markdown('<div class="directive-header">Surveillance Radar: Wilson County</div>', unsafe_allow_html=True)
+st.components.v1.html(f"""<iframe width="100%" height="450" src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&zoom=9&level=surface&overlay=radar&product=radar&calendar=now" frameborder="0" style="border-radius:8px;"></iframe>""", height=460)
+st.markdown('</div>', unsafe_allow_html=True)
