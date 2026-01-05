@@ -51,6 +51,9 @@ site_data, api_val, history_log = load_site_data()
 sed_pct = 25 
 wind_speed = site_data.get('crane_safety', {}).get('max_gust', 0)
 light = site_data.get('lightning', {}).get('recent_strikes_50mi', 0)
+# New Environmental Fields
+temp = site_data.get('environment', {}).get('temp_f', 48) 
+humidity = site_data.get('environment', {}).get('humidity_pct', 62)
 last_sync_time = dt.datetime.now().strftime('%H:%M:%S')
 
 forecast_data = [
@@ -112,12 +115,14 @@ with c_main:
     st.components.v1.html(f"""<iframe width="100%" height="450" src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&zoom=9&level=surface&overlay=radar&product=radar&calendar=now" frameborder="0" style="border-radius:8px;"></iframe>""", height=460)
 
 with c_metrics:
-    # 5. ANALYTICAL METRICS
+    # 5. ANALYTICAL METRICS (UPDATED)
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Analytical Metrics</div>', unsafe_allow_html=True)
     st.metric("Soil Moisture (API)", api_val)
     st.metric("Basin SB3 Capacity", f"{site_data.get('swppp', {}).get('sb3_capacity_pct', 58.0)}%")
     st.metric("Sediment Accumulation", f"{sed_pct}%")
+    st.metric("Temperature", f"{temp}°F")
+    st.metric("Humidity", f"{humidity}%")
     st.metric("Max Wind Gust", f"{wind_speed} MPH")
     st.metric("Lightning (50mi)", light)
     st.markdown('</div>', unsafe_allow_html=True)
