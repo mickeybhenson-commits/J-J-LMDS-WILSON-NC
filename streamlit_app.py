@@ -54,16 +54,16 @@ wind_speed = site_data.get('crane_safety', {}).get('max_gust', 0)
 light = site_data.get('lightning', {}).get('recent_strikes_50mi', 0)
 last_sync_time = dt.datetime.now().strftime('%H:%M:%S')
 
-# UPDATED 7-DAY FORECAST WITH INCHES (QPF)
-forecast_data = site_data.get('forecast_7day', [
-    {"day": "Mon", "rain": "10%", "amt": "0.00\""}, 
-    {"day": "Tue", "rain": "20%", "amt": "0.01\""}, 
-    {"day": "Wed", "rain": "80%", "amt": "0.55\""}, # High Runoff Event
-    {"day": "Thu", "rain": "40%", "amt": "0.10\""},
-    {"day": "Fri", "rain": "10%", "amt": "0.00\""}, 
-    {"day": "Sat", "rain": "0%", "amt": "0.00\""}, 
-    {"day": "Sun", "rain": "0%", "amt": "0.00\""}
-])
+# 7-DAY FORECAST DATA WITH TACTICAL PRIORITIES
+forecast_data = [
+    {"day": "Mon", "rain": "10%", "amt": "0.00\"", "task": "Full Grading: Maximize Hauling"},
+    {"day": "Tue", "rain": "20%", "amt": "0.01\"", "task": "Prep: Finalize Basin SB3 Clean-out"},
+    {"day": "Wed", "rain": "80%", "amt": "0.55\"", "task": "Action: High Runoff Risk / Inspect Silt Fence"},
+    {"day": "Thu", "rain": "40%", "amt": "0.10\"", "task": "Saturated: Limit Heavy Hauling"},
+    {"day": "Fri", "rain": "10%", "amt": "0.00\"", "task": "Drying: Monitor Sediment Trap Levels"},
+    {"day": "Sat", "rain": "0%", "amt": "0.00\"", "task": "Recovery: Resume Standard Operations"},
+    {"day": "Sun", "rain": "0%", "amt": "0.00\"", "task": "Stable: All Clear"}
+]
 
 if api_val < 0.30: status, s_color, s_msg = "OPTIMAL", "#0B8A1D", "Full grading operations authorized."
 elif api_val < 0.60: status, s_color, s_msg = "SATURATED", "#FFAA00", "Limit heavy hauling."
@@ -74,7 +74,7 @@ st.markdown(f"""
     <div class="exec-header">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div class="exec-title">Wayne Brothers</div>
-            <div class="sync-badge">DATA SYNC: {last_sync_time}</div>
+            <div class="sync-badge">SYSTEM ACTIVE • UPDATED: {last_sync_time}</div>
         </div>
         <div style="font-size:1.5em; color:#AAA; text-transform:uppercase;">{site_data.get('project_name', 'J&J LMDS - Wilson, NC')}</div>
         <div style="color:#777;">Wilson, NC | 148.2 Disturbed Acres</div>
@@ -87,17 +87,27 @@ with c_main:
     # 1. FIELD OPERATIONAL DIRECTIVE
     st.markdown(f'<div class="report-section" style="border-top: 6px solid {s_color};"><div class="directive-header">Field Operational Directive</div><h1 style="color:{s_color}; margin:0; font-size:3.5em;">{status}</h1><p style="font-size:1.3em;">{s_msg}</p></div>', unsafe_allow_html=True)
 
-    # 2. EXECUTIVE ADVISORY
+    # 2. EXECUTIVE ADVISORY & TACTICAL SCHEDULE
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">Executive Advisory: Safety & Maintenance</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚠️ EROSION CONTROL: Monitoring stress at East Perimeter. Check low points before Wed {forecast_data[2]["amt"]} rain event.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="directive-header">Executive Advisory: Safety & Tactical Priority</div>', unsafe_allow_html=True)
+    
+    # Restored Silt Fence Warning
+    st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚠️ EROSION CONTROL: Monitoring stress at East Perimeter low points.</div>', unsafe_allow_html=True)
+    
+    # Dynamic Tactical Schedule for the Week
+    st.markdown("<b>Tactical Site Priority Daily Schedule:</b>", unsafe_allow_html=True)
+    for d in forecast_data:
+        task_color = "#00FFCC" if "Full" in d['task'] or "Recovery" in d['task'] else "#FFAA00"
+        if "Action" in d['task']: task_color = "#FF4B4B"
+        st.markdown(f"<div style='font-size:0.9em; margin-bottom:4px;'>• <b>{d['day']}</b>: <span style='color:{task_color};'>{d['task']}</span> ({d['amt']})</div>", unsafe_allow_html=True)
+
     if light > 0: st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚡ LIGHTNING: {light} strikes detected within 50 miles.</div>', unsafe_allow_html=True)
     if sed_pct >= 25: st.markdown(f'<div class="optimal-alert">CMD DIRECTIVE: Basin SB3 at {sed_pct}% sediment. Status {status}. Clean basin immediately while dry.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 3. 7-DAY RAIN OUTLOOK (INCLUDES INCHES)
+    # 3. 7-DAY RAIN OUTLOOK
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">7-Day Rain Outlook (Accumulation & Probability)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="directive-header">7-Day Rain Outlook</div>', unsafe_allow_html=True)
     f_cols = st.columns(7)
     for i, day in enumerate(forecast_data):
         f_cols[i].markdown(f"""
