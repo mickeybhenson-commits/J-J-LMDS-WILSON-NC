@@ -1,41 +1,74 @@
 import streamlit as st
 import json
 
-st.set_page_config(page_title="Construction Site Command", layout="wide")
+# --- Page Config ---
+st.set_page_config(page_title="Wayne Brothers | Site Intelligence", layout="wide")
 
-# Sidebar Switcher
+# --- Custom Theme to Match Your Screenshot ---
+st.markdown("""
+    <style>
+    .main { background-color: #000000; color: #ffffff; }
+    [data-testid="stMetricValue"] { color: #ffffff !important; font-size: 2.5rem !important; }
+    [data-testid="stMetricLabel"] { color: #ff4b4b !important; text-transform: uppercase; font-weight: bold; }
+    .stAlert { background-color: #111111; border: 1px solid #333333; color: #ffffff; }
+    </style>
+    """, unsafe_allow_stdio=True)
+
+# --- Sidebar Selector ---
 st.sidebar.image("https://www.waynebrothers.com/wp-content/uploads/2021/01/logo.png", width=200)
-st.sidebar.title("Project Selection")
+st.sidebar.title("Site Command")
 project_choice = st.sidebar.selectbox("Choose Site:", ["Wilson - J&J LMDS", "Charlotte - South Blvd"])
 
-# Map Choice to File
+# --- Routing Data based on Selection ---
 data_path = "data/wilson_site.json" if "Wilson" in project_choice else "data/charlotte_site.json"
 
-try:
-    with open(data_path) as f:
-        site_data = json.load(f)
+# Load the file
+with open(data_path) as f:
+    site = json.load(f)
 
-    # Header section
-    st.title(f"🚧 {site_data.get('project_name', 'Unknown Project')}")
-    st.markdown(f"**Location:** {site_data.get('location', 'N/A')} | **Status:** ✅ Active")
-    st.caption(f"Last Data Sync: {site_data.get('last_updated', 'N/A')}")
+# --- Header Section (Matched to Screenshot) ---
+# We use the 'location' and 'coordinates' from the JSON file
+st.write(f"### Wayne Brothers")
+st.title(site['project_name'].upper())
+st.write(f"📍 {site.get('location', 'N/A')} | {site.get('acreage', 'N/A')} | {site.get('coords', 'N/A')}")
+st.markdown(f"<div style='text-align: right; color: #00ff00;'>SYSTEM ACTIVE • UPDATED: {site['last_updated']}</div>", unsafe_allow_stdio=True)
+
+st.divider()
+
+# --- Main Dashboard Layout (Two Columns) ---
+col_left, col_right = st.columns([2, 1])
+
+with col_left:
+    # 1. Field Operational Directive
+    st.caption("FIELD OPERATIONAL DIRECTIVE", help="Current site authorization based on environmental triggers.")
+    status = "OPTIMAL" if site['swppp']['rain_24h'] < 0.5 else "ACTION REQUIRED"
+    status_color = "#00ff00" if status == "OPTIMAL" else "#ff0000"
     
-    st.divider()
+    st.markdown(f"""
+        <div style="border-left: 10px solid {status_color}; padding: 20px; background-color: #111111; border-radius: 5px;">
+            <h1 style="color: {status_color}; margin: 0;">{status}</h1>
+            <p style="font-size: 1.5rem; color: #ffffff;">{site['swppp']['notes']}</p>
+        </div>
+    """, unsafe_allow_stdio=True)
 
-    # Dashboard Columns
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Rainfall (24h)", f"{site_data['swppp']['rain_24h']}\"")
-        st.write(f"**SWPPP Notes:** {site_data['swppp']['notes']}")
-    
-    with col2:
-        st.metric("Temp (Low)", f"{site_data['concrete']['temp_low']}°F")
-        st.write(f"**Concrete Notes:** {site_data['concrete']['notes']}")
+    # 2. Executive Advisory
+    st.write("")
+    st.caption("EXECUTIVE ADVISORY: SAFETY & TACTICAL PRIORITY")
+    st.markdown(f"""
+        <div style="background-color: #000000; padding: 10px;">
+            <p><strong>Weekly Tactical Priority Schedule:</strong></p>
+            {site.get('tactical_schedule', '* Data loading...')}
+        </div>
+    """, unsafe_allow_stdio=True)
 
-    with col3:
-        st.metric("Wind Speed", f"{site_data['crane']['wind_speed']} mph")
-        st.success(f"Crane Status: {site_data['crane']['status']}")
+with col_right:
+    # 3. Analytical Metrics
+    st.caption("ANALYTICAL METRICS")
+    st.metric("Soil Moisture (API)", site.get('soil_moisture', '0.000'))
+    st.metric("Basin SB3 Capacity", site.get('basin_capacity', '0%'))
+    st.metric("Sediment Accumulation", site.get('sediment', '0%'))
+    st.metric("Temperature", f"{site['concrete']['temp_low']}°F")
+    st.metric("Humidity", site.get('humidity', '0%'))
 
-except Exception as e:
-    st.error(f"Waiting for data update... (Technical Error: {e})")
-    st.info("The 30-minute timer will fix this shortly, or you can run the 'Storm Button' in GitHub Actions.")
+st.sidebar.markdown("---")
+st.sidebar.info(f"Currently viewing data for the **{site['project_name']}** project.")
