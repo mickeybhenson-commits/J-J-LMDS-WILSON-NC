@@ -1,24 +1,8 @@
 {
-  "project_name": "J&J LMDS - Wilson, NC",
-  "last_updated": "2026-01-05 12:29 EST",
-  "precipitation": {
-    "actual_24h": 0.0,
-    "forecast_prob": 0,
-    "soil_status": "DRYING"
-  },
-  "swppp": {
-    "disturbed_acres": 148.2,
-    "sb3_capacity_pct": 58.0,
-    "freeboard_feet": 1.5,
-    "silt_fence_integrity": "OPTIMAL"
-  },
-  "crane_safety": {
-    "wind_speed": 1,
-    "max_gust": 11,
-    "status": "GO"
-  },
-  "lightning": {
-    "forecast": "STABLE",
-    "recent_strikes_50mi": 0
-  }
+  "project_name": "Wilson - J&J LMDS",
+  "location": "Wilson, NC",
+  "last_updated": "2026-01-05 13:00 EST",
+  "swppp": { "rain_24h": 0.05, "notes": "Site stable." },
+  "concrete": { "temp_low": 38, "blankets_required": true, "notes": "Cover pours." },
+  "crane": { "wind_speed": 8, "status": "GO" }
 }
