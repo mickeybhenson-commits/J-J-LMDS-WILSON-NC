@@ -48,12 +48,11 @@ def load_site_data():
 site_data, api_val, history_log = load_site_data()
 
 # --- 3. ANALYTICAL LOGIC LAYER ---
-sed_pct = 25 # Current sediment level per your analysis
+sed_pct = 25 
 wind_speed = site_data.get('crane_safety', {}).get('max_gust', 0)
 light = site_data.get('lightning', {}).get('recent_strikes_50mi', 0)
 last_sync_time = dt.datetime.now().strftime('%H:%M:%S')
 
-# CLEAN 7-DAY FORECAST (No Source Labels)
 forecast_data = site_data.get('forecast_7day', [
     {"day": "Mon", "rain": "10%"}, {"day": "Tue", "rain": "20%"}, 
     {"day": "Wed", "rain": "80%"}, {"day": "Thu", "rain": "40%"},
@@ -82,21 +81,21 @@ with c_main:
     # 1. FIELD OPERATIONAL DIRECTIVE
     st.markdown(f'<div class="report-section" style="border-top: 6px solid {s_color};"><div class="directive-header">Field Operational Directive</div><h1 style="color:{s_color}; margin:0; font-size:3.5em;">{status}</h1><p style="font-size:1.3em;">{s_msg}</p></div>', unsafe_allow_html=True)
 
-    # 2. CLEAN 7-DAY RAIN OUTLOOK (Sources Removed)
+    # 2. EXECUTIVE ADVISORY (MOVED UP)
+    st.markdown('<div class="report-section">', unsafe_allow_html=True)
+    st.markdown('<div class="directive-header">Executive Advisory: Safety & Maintenance</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚠️ EROSION CONTROL: Monitoring stress at East Perimeter low points.</div>', unsafe_allow_html=True)
+    if light > 0: st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚡ LIGHTNING: {light} strikes detected within 50 miles.</div>', unsafe_allow_html=True)
+    if wind_speed > 25: st.markdown(f'<div class="alert-box">🚨 CRANE ALERT: Max Gust {wind_speed} MPH. STOP LIFTS.</div>', unsafe_allow_html=True)
+    if sed_pct >= 25: st.markdown(f'<div class="optimal-alert">CMD DIRECTIVE: Basin SB3 at {sed_pct}% sediment. Status {status}. Clean basin immediately while dry.</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # 3. 7-DAY RAIN OUTLOOK (MOVED DOWN)
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">7-Day Rain Outlook</div>', unsafe_allow_html=True)
     f_cols = st.columns(7)
     for i, day in enumerate(forecast_data):
         f_cols[i].markdown(f"""<div class="forecast-card"><b>{day['day']}</b><br><span style="color:#00FFCC; font-size:1.4em; font-weight:700;">{day['rain']}</span></div>""", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # 3. EXECUTIVE ADVISORY
-    st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">Executive Advisory: Safety & Maintenance</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚠️ EROSION CONTROL: Monitoring stress at East Perimeter low points.</div>', unsafe_allow_html=True)
-    if light > 0: st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚡ LIGHTNING: {light} strikes within 50 miles.</div>', unsafe_allow_html=True)
-    if wind_speed > 25: st.markdown(f'<div class="alert-box">🚨 CRANE ALERT: Max Gust {wind_speed} MPH. STOP LIFTS.</div>', unsafe_allow_html=True)
-    if sed_pct >= 25: st.markdown(f'<div class="optimal-alert">CMD DIRECTIVE: Basin SB3 at {sed_pct}% sediment. Status {status}. Clean basin immediately while dry.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     # 4. CONTINUOUS LOOP RADAR
