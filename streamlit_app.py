@@ -25,13 +25,13 @@ def apply_universal_command_styling():
         .directive-header {{ color: #CC0000; font-weight: 900; text-transform: uppercase; font-size: 0.85em; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }}
         .alert-box {{ border-left: 5px solid #CC0000; padding: 15px; margin-bottom: 15px; background: rgba(204, 0, 0, 0.1); font-weight: 600; color: #FFD6D6; }}
         .optimal-alert {{ border-left: 5px solid #0B8A1D; padding: 15px; margin-bottom: 15px; background: rgba(11, 138, 29, 0.1); font-weight: 600; color: #D6FFD6; }}
-        .forecast-card {{ text-align: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }}
+        .forecast-card {{ text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }}
         </style>
         """, unsafe_allow_html=True)
 
 apply_universal_command_styling()
 
-# --- 2. DATA ENGINE (MAPPED TO YOUR JSON) ---
+# --- 2. DATA ENGINE ---
 def load_site_data():
     site, api = {"project_name": "J&J Wilson"}, 0.0
     try:
@@ -47,44 +47,32 @@ def load_site_data():
 
 site_data, api_val, history_log = load_site_data()
 
-# --- 3. DYNAMIC CONSENSUS LOGIC ---
-def get_best_model_forecast(site_data):
-    # Mapping 7-day forecast from API data
-    raw_days = site_data.get('forecast_7day', [
-        {"day": "Mon", "rain": "10%"}, {"day": "Tue", "rain": "20%"}, 
-        {"day": "Wed", "rain": "80%"}, {"day": "Thu", "rain": "40%"},
-        {"day": "Fri", "rain": "10%"}, {"day": "Sat", "rain": "0%"}, {"day": "Sun", "rain": "0%"}
-    ])
-    consensus = []
-    for i, d in enumerate(raw_days):
-        model = "HRRR (High-Res)" if i <= 1 else "ECMWF (Euro)" # Best-fit lead times
-        consensus.append({"day": d['day'], "rain": d['rain'], "model": model})
-    return consensus
-
-consensus_list = get_best_model_forecast(site_data)
-
-# --- 4. MAPPED ANALYTICAL LOGIC ---
-sed_pct = 25 # Manual trigger for current maintenance need
-crane_status = site_data.get('crane_safety', {}).get('status', 'GO')
-wind_gust = site_data.get('crane_safety', {}).get('max_gust', 0)
+# --- 3. ANALYTICAL LOGIC LAYER ---
+sed_pct = 25 # Current sediment level per your analysis
+wind_speed = site_data.get('crane_safety', {}).get('max_gust', 0)
 light = site_data.get('lightning', {}).get('recent_strikes_50mi', 0)
-soil_drying = site_data.get('precipitation', {}).get('soil_status', 'DRYING')
 last_sync_time = dt.datetime.now().strftime('%H:%M:%S')
 
-# Status based on your API soil saturation
+# CLEAN 7-DAY FORECAST (No Source Labels)
+forecast_data = site_data.get('forecast_7day', [
+    {"day": "Mon", "rain": "10%"}, {"day": "Tue", "rain": "20%"}, 
+    {"day": "Wed", "rain": "80%"}, {"day": "Thu", "rain": "40%"},
+    {"day": "Fri", "rain": "10%"}, {"day": "Sat", "rain": "0%"}, {"day": "Sun", "rain": "0%"}
+])
+
 if api_val < 0.30: status, s_color, s_msg = "OPTIMAL", "#0B8A1D", "Full grading operations authorized."
 elif api_val < 0.60: status, s_color, s_msg = "SATURATED", "#FFAA00", "Limit heavy hauling."
 else: status, s_color, s_msg = "RESTRICTED", "#B00000", "SITE CLOSED TO GRADING."
 
-# --- 5. EXECUTIVE COMMAND CENTER ---
+# --- 4. EXECUTIVE COMMAND CENTER ---
 st.markdown(f"""
     <div class="exec-header">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div class="exec-title">Wayne Brothers</div>
-            <div class="sync-badge">DATA SYNC: {last_sync_time}</div>
+            <div class="sync-badge">SYSTEM ACTIVE • UPDATED: {last_sync_time}</div>
         </div>
         <div style="font-size:1.5em; color:#AAA; text-transform:uppercase;">{site_data.get('project_name', 'J&J LMDS - Wilson, NC')}</div>
-        <div style="color:#777;">Wilson, NC | 148.2 Disturbed Acres | Soil Status: {soil_drying}</div>
+        <div style="color:#777;">Wilson, NC | 148.2 Disturbed Acres</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -94,21 +82,21 @@ with c_main:
     # 1. FIELD OPERATIONAL DIRECTIVE
     st.markdown(f'<div class="report-section" style="border-top: 6px solid {s_color};"><div class="directive-header">Field Operational Directive</div><h1 style="color:{s_color}; margin:0; font-size:3.5em;">{status}</h1><p style="font-size:1.3em;">{s_msg}</p></div>', unsafe_allow_html=True)
 
-    # 2. 7-DAY DYNAMIC FORECAST
+    # 2. CLEAN 7-DAY RAIN OUTLOOK (Sources Removed)
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">7-Day Dynamic Rain Outlook (HRRR/ECMWF Consensus)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="directive-header">7-Day Rain Outlook</div>', unsafe_allow_html=True)
     f_cols = st.columns(7)
-    for i, d in enumerate(consensus_list):
-        f_cols[i].markdown(f"""<div class="forecast-card"><b style="font-size:1.1em;">{d['day']}</b><br><span style="color:#00FFCC; font-size:1.3em; font-weight:700;">{d['rain']}</span><br><span style="font-size:0.6em; color:#888;">{d['model']}</span></div>""", unsafe_allow_html=True)
+    for i, day in enumerate(forecast_data):
+        f_cols[i].markdown(f"""<div class="forecast-card"><b>{day['day']}</b><br><span style="color:#00FFCC; font-size:1.4em; font-weight:700;">{day['rain']}</span></div>""", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     # 3. EXECUTIVE ADVISORY
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Executive Advisory: Safety & Maintenance</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚠️ EROSION CONTROL: Monitoring stress at East Perimeter. Silt Fence Integrity: {site_data.get("swppp",{}).get("silt_fence_integrity", "OPTIMAL")}</div>', unsafe_allow_html=True)
-    if crane_status != "GO" or wind_gust > 25: st.markdown(f'<div class="alert-box">🚨 CRANE ALERT: Max Gust {wind_gust} MPH. Status: {crane_status}. STOP LIFTS.</div>', unsafe_allow_html=True)
-    if light > 0: st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚡ LIGHTNING: {light} strikes detected within 50 miles.</div>', unsafe_allow_html=True)
-    if sed_pct >= 25: st.markdown(f'<div class="optimal-alert">CMD: Basin SB3 at {sed_pct}% sediment. Status {status}. Clean out basin now while dry.</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚠️ EROSION CONTROL: Monitoring stress at East Perimeter low points.</div>', unsafe_allow_html=True)
+    if light > 0: st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚡ LIGHTNING: {light} strikes within 50 miles.</div>', unsafe_allow_html=True)
+    if wind_speed > 25: st.markdown(f'<div class="alert-box">🚨 CRANE ALERT: Max Gust {wind_speed} MPH. STOP LIFTS.</div>', unsafe_allow_html=True)
+    if sed_pct >= 25: st.markdown(f'<div class="optimal-alert">CMD DIRECTIVE: Basin SB3 at {sed_pct}% sediment. Status {status}. Clean basin immediately while dry.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     # 4. CONTINUOUS LOOP RADAR
@@ -121,11 +109,11 @@ with c_metrics:
     st.metric("Soil Moisture (API)", api_val)
     st.metric("Basin SB3 Capacity", f"{site_data.get('swppp', {}).get('sb3_capacity_pct', 58.0)}%")
     st.metric("Sediment Accumulation", f"{sed_pct}%")
-    st.metric("Max Wind Gust", f"{wind_gust} MPH")
-    st.metric("Lightning Strikes", light)
+    st.metric("Max Wind Gust", f"{wind_speed} MPH")
+    st.metric("Lightning (50mi)", light)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 6. HISTORY LOG
+    # 6. STATUS HISTORY LOG
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Status History Log</div>', unsafe_allow_html=True)
     if not history_log.empty: st.dataframe(history_log, hide_index=True, use_container_width=True)
