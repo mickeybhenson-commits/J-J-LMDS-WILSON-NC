@@ -53,6 +53,7 @@ wind_speed = site_data.get('crane_safety', {}).get('max_gust', 0)
 light = site_data.get('lightning', {}).get('recent_strikes_50mi', 0)
 last_sync_time = dt.datetime.now().strftime('%H:%M:%S')
 
+# UPDATED TACTICAL SCHEDULE WITH CORRECTED THURSDAY COLOR LOGIC
 forecast_data = [
     {"day": "Mon", "rain": "10%", "amt": "0.00\"", "task": "PRIORITY: Monitor East Perimeter Silt Fences + Clean Basin SB3 (25% Sed)"},
     {"day": "Tue", "rain": "20%", "amt": "0.01\"", "task": "Finalize Infrastructure Prep: Clear all low-point blockages"},
@@ -85,13 +86,18 @@ with c_main:
     # 1. FIELD OPERATIONAL DIRECTIVE
     st.markdown(f'<div class="report-section" style="border-top: 6px solid {s_color};"><div class="directive-header">Field Operational Directive</div><h1 style="color:{s_color}; margin:0; font-size:3.5em;">{status}</h1><p style="font-size:1.3em;">{s_msg}</p></div>', unsafe_allow_html=True)
 
-    # 2. EXECUTIVE ADVISORY & TACTICAL SCHEDULE (DIRECTIVE REMOVED)
+    # 2. EXECUTIVE ADVISORY & TACTICAL SCHEDULE
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Executive Advisory: Safety & Tactical Priority</div>', unsafe_allow_html=True)
     
     st.markdown("<b>Weekly Tactical Priority Schedule:</b>", unsafe_allow_html=True)
     for d in forecast_data:
-        task_color = "#FFD700" if d['day'] == "Mon" else ("#FF4B4B" if "STORM" in d['task'] else "#00FFCC")
+        # Thursday Color Shift: Turned from Green to Yellow (#FFAA00)
+        if d['day'] == "Mon": task_color = "#FFD700"
+        elif d['day'] == "Thu": task_color = "#FFAA00" # Saturated Warning 
+        elif "STORM" in d['task']: task_color = "#FF4B4B"
+        else: task_color = "#00FFCC"
+        
         st.markdown(f"<div style='font-size:0.9em; margin-bottom:6px;'>• <b>{d['day']}</b>: <span style='color:{task_color}; font-weight:700;'>{d['task']}</span> ({d['amt']})</div>", unsafe_allow_html=True)
 
     if light > 0: st.markdown(f'<div class="alert-box" style="border-color:#FFAA00;">⚡ LIGHTNING: {light} strikes detected within 50 miles.</div>', unsafe_allow_html=True)
