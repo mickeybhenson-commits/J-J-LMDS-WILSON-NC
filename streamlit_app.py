@@ -32,9 +32,9 @@ def apply_universal_command_styling():
 
 apply_universal_command_styling()
 
-# --- 2. GROUND TRUTH OVERRIDE ENGINE ---
+# --- 2. THE GROUND TRUTH ENGINE (USGS 02090380) ---
 def get_usgs_ground_truth():
-    """Fetches real-time precipitation from USGS 02090380 (Lucama)."""
+    """Fetches real-time ground truth from USGS. Site Truth > Forecast."""
     try:
         url = "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=02090380&parameterCd=00045"
         resp = requests.get(url, timeout=5).json()
@@ -45,14 +45,11 @@ def get_usgs_ground_truth():
 
 usgs_rain = get_usgs_ground_truth()
 
-# --- 3. CORE PROJECT CONSTANTS & TACTICAL MAPPING ---
+# --- 3. CORE TACTICAL MAPPING ---
 SITE_NAME = "Johnson & Johnson Biologics Manufacturing Facility"
-ACRES, COORDS = 148.2, "35.726, -77.916"
-API, SED_INCHES = 0.058, 18 
-
 current_dt = dt.datetime.now()
 current_time = current_dt.strftime('%H:%M')
-current_day = current_dt.strftime('%a') 
+current_day = current_dt.strftime('%a')
 
 tactical_map = {
     "Mon": {"status": "MAINTENANCE", "color": "#FFFF00", "hi": 55, "lo": 29, "pop": "10%", "in": "0.00\"", "task": "PRIORITY: Clean Basin SB3 + Inspect Silt Fences"},
@@ -64,25 +61,27 @@ tactical_map = {
     "Sun": {"status": "STABLE", "color": "#00FFCC", "hi": 53, "lo": 34, "pop": "20%", "in": "0.00\"", "task": "Stable: Reset for Monday"}
 }
 
-# --- 4. THE TRUTH OVERRIDE LOGIC ---
+# --- 4. GROUND TRUTH OVERRIDE (PRIORITY OVER FORECAST) ---
+# If USGS sensor shows 0.0, we FORCE today and tomorrow to be STABLE
+if usgs_rain == 0.0:
+    for day in ["Wed", "Thu"]:
+        if current_day == day:
+            tactical_map[day]["status"] = "STABLE"
+            tactical_map[day]["color"] = "#00FFCC"
+            tactical_map[day]["task"] = "VERIFIED DRY: Resume Standard Operations"
+            tactical_map[day]["pop"] = "0%"
+            tactical_map[day]["in"] = "0.00\" (USGS)"
+
 today = tactical_map.get(current_day, tactical_map["Sun"])
 
-# If USGS confirms NO RAIN (0.0), override the forecast even if it's Wednesday
-if usgs_rain == 0.0 and current_day == "Wed":
-    today['status'] = "STABLE (VERIFIED)"
-    today['color'] = "#00FFCC"
-    today['task'] = "Site Verified Dry: Resume Standard Operations"
-    today['in'] = "0.00\" (USGS)"
-
-# --- 5. COMMAND CENTER UI ---
+# --- 5. UI RENDERING (SAME FORMATTING) ---
 st.markdown(f"""
     <div class="exec-header">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div class="exec-title">Wayne Brothers</div>
-            <div class="sync-badge">USGS TRUTH SYNC • {current_time}</div>
+            <div class="sync-badge">GROUND TRUTH OVERRIDE ACTIVE • {current_time}</div>
         </div>
         <div style="font-size:1.5em; color:#AAA; text-transform:uppercase;">{SITE_NAME}</div>
-        <div style="color:#777; font-weight:700;">Wilson, NC | {ACRES} Disturbed Acres | {COORDS}</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -93,28 +92,20 @@ with c_main:
         <div class="report-section" style="border-top: 8px solid {today['color']};">
             <div class="directive-header">Field Operational Directive • {current_day.upper()} VALIDATION</div>
             <h1 style="color: {today['color']}; margin: 0; font-size: 3.5em; letter-spacing: -2px;">{today['status']}</h1>
-            <p style="font-size: 1.3em; margin-top: 10px;"><b>{today['pop']} Prob / {today['in']} Rain:</b> {today['task']}</p>
+            <p style="font-size: 1.3em; margin-top: 10px;"><b>{today['in']} Rain:</b> {today['task']}</p>
         </div>
     """, unsafe_allow_html=True)
 
+    # 7-Day Weather Cards (Synced to Truth)
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">Executive Advisory: Safety & Tactical Priority</div>', unsafe_allow_html=True)
-    for day_key, d in tactical_map.items():
-        # Visual fix: ensure the table shows the updated TRUTH for today
-        display_task = today['task'] if day_key == current_day else d['task']
-        display_color = today['color'] if day_key == current_day else d['color']
-        st.markdown(f"<div style='font-size:0.85em; margin-bottom:4px;'>• <b>{day_key}</b> ({d['hi']}°/{d['lo']}°): <span style='color:{display_color}; font-weight:700;'>{display_task}</span></div>", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="report-section">', unsafe_allow_html=True)
-    st.markdown('<div class="directive-header">7-Day Weather Outlook (NWS/Meteo Hybrid)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="directive-header">7-Day Weather Outlook</div>', unsafe_allow_html=True)
     f_cols = st.columns(7)
     for i, (day_key, d) in enumerate(tactical_map.items()):
         f_cols[i].markdown(f"""
-            <div class="forecast-card" style="border-top: 4px solid {d['color'] if day_key != current_day else today['color']};">
+            <div class="forecast-card" style="border-top: 4px solid {d['color']};">
                 <b>{day_key}</b><br>
                 <div class="temp-box">{d['hi']}°/{d['lo']}°</div><br>
-                <div class="precip-box">{d['pop'] if day_key != current_day else '0%'}</div>
+                <div class="precip-box">{d['pop']} Prob</div>
                 <div style="font-size: 0.8em; color: #AAA;">{d['in']} Total</div>
             </div>
         """, unsafe_allow_html=True)
@@ -123,15 +114,14 @@ with c_main:
 with c_metrics:
     st.markdown('<div class="report-section">', unsafe_allow_html=True)
     st.markdown('<div class="directive-header">Analytical Metrics</div>', unsafe_allow_html=True)
-    st.metric("USGS Ground Truth (Rain)", f"{usgs_rain}\"", delta="DRY" if usgs_rain == 0 else "RAIN")
+    # Priority Metric: USGS Verified Rain
+    st.metric("USGS Lucama Rain", f"{usgs_rain}\"", delta="DRY" if usgs_rain == 0 else "PRECIP", delta_color="normal")
     st.metric(label="Basin SB3 Capacity", value="58%", delta="STABLE" if usgs_rain == 0 else "CRITICAL", delta_color="normal" if usgs_rain == 0 else "inverse")
-    st.metric("Wind Speed", "7 MPH", delta="S Direction")
     st.metric("Temperature", "54°F")
     st.metric("Humidity", "55%")
-    st.metric("NC DEQ NTU Limit", "50 NTU")
     st.markdown('</div>', unsafe_allow_html=True)
 
+# Surveillance Radar
 st.markdown('<div class="report-section">', unsafe_allow_html=True)
 st.markdown('<div class="directive-header">Surveillance Radar: Wilson County</div>', unsafe_allow_html=True)
-st.components.v1.html(f"""<iframe width="100%" height="450" src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&zoom=9&level=surface&overlay=radar" frameborder="0" style="border-radius:8px;"></iframe>""", height=460)
-st.markdown('</div>', unsafe_allow_html=True)
+st.components.v1.html(f"""<iframe width="100%" height="450" src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&zoom=9&overlay=radar" frameborder="0"></iframe>""", height=460)
