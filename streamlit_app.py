@@ -35,7 +35,6 @@ apply_universal_command_styling()
 
 # --- 2. MULTI-SOURCE TRUTH COLLECTOR ---
 ACCU_KEY = st.secrets.get("ACCU_KEY", "zpka_f1d5b5f80b014057b3a6e57011d9b56a_77161a13")
-PLANET_KEY = st.secrets.get("PLANET_API_KEY", "PLAKffe383ae642849e5bf2e6f3864d85de9")
 
 def get_usgs_truth():
     try:
@@ -51,25 +50,8 @@ def get_accu_minutecast():
         return resp.get("Summary", {}).get("Phrase", "No rain detected")
     except: return "Manual Override Active"
 
-def get_planet_visual():
-    """Fetches the latest PlanetScope scene thumbnail for the J&J site"""
-    try:
-        search_url = "https://api.planet.com/data/v1/quick-search"
-        headers = {'Authorization': f'api-key {PLANET_KEY}', 'Content-Type': 'application/json'}
-        search_filter = {
-            "item_types": ["PSScene"],
-            "filter": {"type": "AndFilter", "config": [
-                {"type": "GeometryFilter", "field_name": "geometry", "config": {"type": "Point", "coordinates": [-77.9968, 35.7624]}},
-                {"type": "DateRangeFilter", "field_name": "acquired", "config": {"gt": "2026-01-01T00:00:00Z"}}
-            ]}
-        }
-        res = requests.post(search_url, headers=headers, json=search_filter).json()
-        return res['features'][0]['_links']['thumbnail'] + f"?api_key={PLANET_KEY}"
-    except: return "https://raw.githubusercontent.com/mickeybhenson-commits/J-J-LMDS-WILSON-NC/main/image_12e160.png"
-
 usgs_val = get_usgs_truth()
 minutecast_phrase = get_accu_minutecast()
-planet_thumb = get_planet_visual()
 
 # --- 3. DYNAMIC ROLLING CALENDAR ENGINE ---
 current_dt = dt.datetime.now()
@@ -77,7 +59,6 @@ current_day_name = current_dt.strftime('%a')
 # Generate next 7 days dynamically (Today + 6)
 rolling_dates = [(current_dt + dt.timedelta(days=i)) for i in range(7)]
 
-# Master Data Store for Tactical Info
 master_forecast = {
     "Mon": {"status": "STABLE", "color": "#00FFCC", "hi": 58, "lo": 34, "pop": "1%", "in": "0.00\"", "task": "Completed: Site Maintenance"},
     "Tue": {"status": "STABLE", "color": "#00FFCC", "hi": 63, "lo": 42, "pop": "2%", "in": "0.00\"", "task": "Completed: Silt Fence Audit"},
@@ -112,12 +93,7 @@ with c_main:
         </div>
     """, unsafe_allow_html=True)
 
-    # 2. Planet.com Visual Verification (NEW)
-    st.markdown('<div class="report-section"><div class="directive-header">🛰️ Planet.com Satellite Verification (3m Resolution)</div>', unsafe_allow_html=True)
-    st.image(planet_thumb, caption=f"Latest High-Res Pass • 5100 Corporate Parkway", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # 3. Rolling 7-Day Outlook (Yesterday is Deleted, Next Day Appears)
+    # 2. Rolling 7-Day Outlook (Yesterday is Deleted, Next Day Appears)
     st.markdown('<div class="report-section"><div class="directive-header">Rolling 7-Day Weather Outlook</div>', unsafe_allow_html=True)
     f_cols = st.columns(7)
     for i, date_obj in enumerate(rolling_dates):
@@ -141,7 +117,7 @@ with c_metrics:
     st.metric("Humidity", "55%")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 5. Radar Surveillance
+# 3. Radar Surveillance
 st.markdown('<div class="report-section"><div class="directive-header">Surveillance Radar: Wilson County</div>', unsafe_allow_html=True)
 st.components.v1.html(f'<iframe width="100%" height="450" src="https://embed.windy.com/embed2.html?lat=35.726&lon=-77.916&zoom=9&overlay=radar" frameborder="0" style="border-radius:8px;"></iframe>', height=460)
 st.markdown('</div>', unsafe_allow_html=True)
